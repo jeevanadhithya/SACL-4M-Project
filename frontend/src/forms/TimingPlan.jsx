@@ -1,0 +1,210 @@
+import React, { useState } from "react";
+import FormWrapper from "./FormWrapper";
+
+const initialActivities = [
+  { phase: "I Phase", name: "Customer Enquiry", app: "AA, A", plan: ["P", "A"] },
+  { phase: "I Phase", name: "Receipt of 2D Drawing & 3D Model", app: "AA, A, B, C", plan: ["P", "A"] },
+  { phase: "I Phase", name: "Preliminary Assessment", app: "AA, A", plan: ["P", "A"] },
+  { phase: "I Phase", name: "Product Feasibility", app: "AA, A, B, C", plan: ["P", "A"] },
+  { phase: "I Phase", name: "Clarification required from customer", app: "AA, A, B, C", plan: ["P", "A"] },
+  { phase: "I Phase", name: "Cost Estimation", app: "AA, A, B, C", plan: ["P", "A"] },
+  { phase: "I Phase", name: "Quote submission", app: "AA, A, B, C", plan: ["P", "A"] },
+  { phase: "I Phase", name: "LOI / Purchase order", app: "AA, A, B, C", plan: ["P", "A"] },
+  { phase: "I Phase", name: "Team Feasibility Commitment", app: "AA, A", plan: ["P", "A"] },
+  { phase: "I Phase", name: "Contract review & Order acceptance", app: "AA, A, B, C", plan: ["P", "A"] },
+];
+
+const TimingPlan = () => {
+  const [meta, setMeta] = useState({
+    type: "Process/Product Change",
+    projectName: "",
+    partNo: "",
+    customer: "",
+    productName: "",
+    preparedDate: new Date().toISOString().split("T")[0],
+    rev: "01",
+    goNextPhase: "Yes"
+  });
+
+  const [savedMsg, setSavedMsg] = useState("");
+
+  const handleSave = () => {
+    localStorage.setItem("saved_timing_plan", JSON.stringify(meta));
+    setSavedMsg("Timing plan saved successfully!");
+    setTimeout(() => setSavedMsg(""), 3000);
+  };
+
+  return (
+    <FormWrapper
+      title="TIMING PLAN (APQP / CHANGE SCHEDULE)"
+      qfNo="QF/01/MKT-09"
+      revDate="Rev.No: 05 dt 01.12.2024"
+      onSave={handleSave}
+      onPrint={() => window.print()}
+    >
+      {savedMsg && (
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold">
+          {savedMsg}
+        </div>
+      )}
+
+      {/* Plan Type Selector */}
+      <div className="flex gap-6 mb-4 p-3 bg-gray-50 border-2 border-gray-900 font-bold text-xs uppercase">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            name="planType"
+            value="New Product"
+            checked={meta.type === "New Product"}
+            onChange={(e) => setMeta({ ...meta, type: e.target.value })}
+            className="accent-[#ff9100]"
+          />
+          New Product
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            name="planType"
+            value="Process/Product Change"
+            checked={meta.type === "Process/Product Change"}
+            onChange={(e) => setMeta({ ...meta, type: e.target.value })}
+            className="accent-[#ff9100]"
+          />
+          Process / Product Change
+        </label>
+      </div>
+
+      {/* Meta Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 border-2 border-gray-900 mb-6 divide-y md:divide-y-0 md:divide-x-2 divide-gray-900">
+        <div className="p-2">
+          <span className="text-[10px] font-black uppercase text-gray-500 block">Project Name:</span>
+          <input
+            type="text"
+            value={meta.projectName}
+            onChange={(e) => setMeta({ ...meta, projectName: e.target.value })}
+            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100]"
+          />
+        </div>
+        <div className="p-2">
+          <span className="text-[10px] font-black uppercase text-gray-500 block">Drg / Part No:</span>
+          <input
+            type="text"
+            value={meta.partNo}
+            onChange={(e) => setMeta({ ...meta, partNo: e.target.value })}
+            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100]"
+          />
+        </div>
+        <div className="p-2">
+          <span className="text-[10px] font-black uppercase text-gray-500 block">Customer:</span>
+          <input
+            type="text"
+            value={meta.customer}
+            onChange={(e) => setMeta({ ...meta, customer: e.target.value })}
+            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100]"
+          />
+        </div>
+        <div className="p-2">
+          <span className="text-[10px] font-black uppercase text-gray-500 block">Prepared Date:</span>
+          <input
+            type="date"
+            value={meta.preparedDate}
+            onChange={(e) => setMeta({ ...meta, preparedDate: e.target.value })}
+            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100]"
+          />
+        </div>
+      </div>
+
+      {/* Timeline Gantt / Matrix */}
+      <div className="overflow-x-auto mb-6">
+        <table className="w-full border-collapse border-2 border-gray-900 text-xs text-center min-w-[900px]">
+          <thead className="bg-gray-100 font-bold border-b-2 border-gray-900">
+            <tr>
+              <th className="border-2 border-gray-900 p-2 w-20" rowSpan="2">APQP Phase</th>
+              <th className="border-2 border-gray-900 p-2 text-left w-64" rowSpan="2">Activity</th>
+              <th className="border-2 border-gray-900 p-2 w-24" rowSpan="2">Applicability</th>
+              <th className="border-2 border-gray-900 p-2 w-12" rowSpan="2">P/A</th>
+              <th className="border-2 border-gray-900 p-1" colSpan="4">Month 1</th>
+              <th className="border-2 border-gray-900 p-1" colSpan="4">Month 2</th>
+              <th className="border-2 border-gray-900 p-1" colSpan="4">Month 3</th>
+              <th className="border-2 border-gray-900 p-2 w-32" rowSpan="2">Remarks</th>
+            </tr>
+            <tr className="text-[10px]">
+              {Array(3).fill(["W1", "W2", "W3", "W4"]).flat().map((wk, i) => (
+                <th key={i} className="border border-gray-400 p-1 bg-gray-50">{wk}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {initialActivities.map((act, idx) => (
+              <React.Fragment key={idx}>
+                {/* Plan Row */}
+                <tr className="hover:bg-yellow-50/30">
+                  <td className="border-2 border-gray-900 p-2 font-black text-gray-700 bg-gray-50" rowSpan="2">
+                    {act.phase}
+                  </td>
+                  <td className="border-2 border-gray-900 p-2 text-left font-bold" rowSpan="2">
+                    {act.name}
+                  </td>
+                  <td className="border-2 border-gray-900 p-2 text-gray-600 font-mono" rowSpan="2">
+                    {act.app}
+                  </td>
+                  <td className="border border-gray-400 p-1 font-black bg-blue-50 text-blue-800">P</td>
+                  {Array(12).fill(0).map((_, wIdx) => (
+                    <td key={wIdx} className="border border-gray-300 p-0">
+                      <input type="checkbox" className="w-3.5 h-3.5 accent-blue-600" />
+                    </td>
+                  ))}
+                  <td className="border-2 border-gray-900 p-1" rowSpan="2">
+                    <input type="text" placeholder="Status" className="w-full text-[11px] outline-none" />
+                  </td>
+                </tr>
+                {/* Actual Row */}
+                <tr className="border-b-2 border-gray-900 hover:bg-yellow-50/30">
+                  <td className="border border-gray-400 p-1 font-black bg-green-50 text-green-800">A</td>
+                  {Array(12).fill(0).map((_, wIdx) => (
+                    <td key={wIdx} className="border border-gray-300 p-0">
+                      <input type="checkbox" className="w-3.5 h-3.5 accent-green-600" />
+                    </td>
+                  ))}
+                </tr>
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Sign-off & Next Phase */}
+      <div className="border-2 border-gray-900 p-4 bg-gray-50 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <span className="font-black text-xs uppercase tracking-wider text-gray-800">Go for next Phase:</span>
+          {["Yes", "No"].map((choice) => (
+            <label key={choice} className="flex items-center gap-1.5 font-bold text-xs uppercase cursor-pointer">
+              <input
+                type="radio"
+                name="nextPhase"
+                value={choice}
+                checked={meta.goNextPhase === choice}
+                onChange={(e) => setMeta({ ...meta, goNextPhase: e.target.value })}
+                className="w-4 h-4 accent-[#ff9100]"
+              />
+              {choice}
+            </label>
+          ))}
+        </div>
+
+        <div className="flex gap-6 text-xs">
+          <div>
+            <span className="text-[10px] font-bold text-gray-500 block">CFT Leader:</span>
+            <input type="text" placeholder="Approved / Sign" className="font-bold border-b border-gray-400 outline-none bg-transparent" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-gray-500 block">Plant Head:</span>
+            <input type="text" placeholder="Approved / Sign" className="font-bold border-b border-gray-400 outline-none bg-transparent" />
+          </div>
+        </div>
+      </div>
+    </FormWrapper>
+  );
+};
+
+export default TimingPlan;

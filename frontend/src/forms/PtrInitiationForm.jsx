@@ -1,0 +1,257 @@
+import React, { useState } from "react";
+import FormWrapper from "./FormWrapper";
+
+const PtrInitiationForm = () => {
+  const [meta, setMeta] = useState({
+    from: "",
+    department: "",
+    date: new Date().toISOString().split("T")[0],
+    customer: "",
+    partNameNumber: "",
+    revNumber: "",
+    reason: "",
+    requestDate: "",
+    requestSign: ""
+  });
+
+  const [cftData, setCftData] = useState([
+    { id: 1, desc: "If required", p1: "Yes", p2: "Yes", p3: "Yes" },
+    { id: 2, desc: "Date of Production run (if required)", p1: "", p2: "", p3: "" },
+    { id: 3, desc: "Quantity Produced / customer specified qty", p1: "5 Nos", p2: "25 Nos", p3: "50 Nos" },
+    { id: 4, desc: "Meet the drawing requirement / customer specific requirement", p1: "Yes", p2: "Yes", p3: "Yes" },
+    { id: 5, desc: "Sample submission required to Customer", p1: "Yes", p2: "Yes", p3: "Yes" },
+    { id: 6, desc: "If required, sample submitted Date", p1: "", p2: "", p3: "" },
+    { id: 7, desc: "Status of the samples submitted", p1: "OK", p2: "OK", p3: "OK" },
+  ]);
+
+  const [bottomInfo, setBottomInfo] = useState({
+    comments: "",
+    brakePointDate: "",
+    invoiceDetails: "",
+    identification: ""
+  });
+
+  const [savedMsg, setSavedMsg] = useState("");
+
+  const handleSave = () => {
+    localStorage.setItem("saved_ptr_initiation", JSON.stringify({ meta, cftData, bottomInfo }));
+    setSavedMsg("PTR Initiation Form saved successfully!");
+    setTimeout(() => setSavedMsg(""), 3000);
+  };
+
+  return (
+    <FormWrapper
+      title="PTR INITIATION FORM"
+      qfNo="QF/07/MRO-16"
+      revDate="14.08.2017"
+      onSave={handleSave}
+      onPrint={() => window.print()}
+    >
+      {savedMsg && (
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold">
+          {savedMsg}
+        </div>
+      )}
+
+      {/* Origin Header */}
+      <div className="grid grid-cols-1 md:grid-cols-4 border-2 border-gray-900 mb-6 divide-y md:divide-y-0 md:divide-x-2 divide-gray-900 bg-gray-50/50">
+        <div className="p-2">
+          <span className="text-[10px] font-black uppercase text-gray-500 block">From:</span>
+          <input
+            type="text"
+            value={meta.from}
+            onChange={(e) => setMeta({ ...meta, from: e.target.value })}
+            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100] bg-transparent"
+          />
+        </div>
+        <div className="p-2">
+          <span className="text-[10px] font-black uppercase text-gray-500 block">Department:</span>
+          <input
+            type="text"
+            value={meta.department}
+            onChange={(e) => setMeta({ ...meta, department: e.target.value })}
+            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100] bg-transparent"
+          />
+        </div>
+        <div className="p-2">
+          <span className="text-[10px] font-black uppercase text-gray-500 block">To:</span>
+          <span className="font-black text-gray-800">CFT</span>
+        </div>
+        <div className="p-2">
+          <span className="text-[10px] font-black uppercase text-gray-500 block">Date:</span>
+          <input
+            type="date"
+            value={meta.date}
+            onChange={(e) => setMeta({ ...meta, date: e.target.value })}
+            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100] bg-transparent"
+          />
+        </div>
+      </div>
+
+      {/* Details of Request */}
+      <div className="border-2 border-gray-900 p-4 mb-6">
+        <h4 className="text-xs font-black uppercase tracking-wider text-gray-800 mb-3 border-b pb-1">
+          Details of Request
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+          <div>
+            <span className="text-[10px] font-black uppercase text-gray-500 block">Customer:</span>
+            <input
+              type="text"
+              value={meta.customer}
+              onChange={(e) => setMeta({ ...meta, customer: e.target.value })}
+              className="w-full font-bold border-b border-gray-300 outline-none focus:border-[#ff9100]"
+            />
+          </div>
+          <div>
+            <span className="text-[10px] font-black uppercase text-gray-500 block">Part Name / Number:</span>
+            <input
+              type="text"
+              value={meta.partNameNumber}
+              onChange={(e) => setMeta({ ...meta, partNameNumber: e.target.value })}
+              className="w-full font-bold border-b border-gray-300 outline-none focus:border-[#ff9100]"
+            />
+          </div>
+          <div>
+            <span className="text-[10px] font-black uppercase text-gray-500 block">Rev. Number:</span>
+            <input
+              type="text"
+              value={meta.revNumber}
+              onChange={(e) => setMeta({ ...meta, revNumber: e.target.value })}
+              className="w-full font-bold border-b border-gray-300 outline-none focus:border-[#ff9100]"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <span className="text-[10px] font-black uppercase text-gray-500 block">Reason:</span>
+            <input
+              type="text"
+              value={meta.reason}
+              onChange={(e) => setMeta({ ...meta, reason: e.target.value })}
+              className="w-full font-bold border-b border-gray-300 outline-none focus:border-[#ff9100]"
+            />
+          </div>
+          <div>
+            <span className="text-[10px] font-black uppercase text-gray-500 block">Signature:</span>
+            <input
+              type="text"
+              value={meta.requestSign}
+              onChange={(e) => setMeta({ ...meta, requestSign: e.target.value })}
+              className="w-full font-bold border-b border-gray-300 outline-none focus:border-[#ff9100]"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* For Use of CFT Table */}
+      <div className="mb-6">
+        <h4 className="text-xs font-black uppercase tracking-wider text-gray-800 mb-2">For Use of CFT</h4>
+        <table className="w-full border-collapse border-2 border-gray-900 text-xs">
+          <thead className="bg-gray-100 font-bold border-b-2 border-gray-900 text-gray-900 uppercase">
+            <tr>
+              <th className="border-2 border-gray-900 p-2 w-12 text-center">S.No</th>
+              <th className="border-2 border-gray-900 p-2 text-left">Description</th>
+              <th className="border-2 border-gray-900 p-2 w-32 text-center bg-blue-50/50">PTR 1</th>
+              <th className="border-2 border-gray-900 p-2 w-32 text-center bg-green-50/50">PTR 2</th>
+              <th className="border-2 border-gray-900 p-2 w-32 text-center bg-yellow-50/50">PTR 3</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cftData.map((row, idx) => (
+              <tr key={row.id} className="border-b border-gray-300 hover:bg-gray-50">
+                <td className="border-2 border-gray-900 p-2 text-center font-bold text-gray-600">{row.id}</td>
+                <td className="border-2 border-gray-900 p-2 font-bold text-gray-900">{row.desc}</td>
+                <td className="border-2 border-gray-900 p-1 text-center bg-blue-50/20">
+                  <input
+                    type="text"
+                    value={row.p1}
+                    onChange={(e) => {
+                      const updated = [...cftData];
+                      updated[idx].p1 = e.target.value;
+                      setCftData(updated);
+                    }}
+                    className="w-full text-center font-bold text-xs outline-none bg-transparent"
+                  />
+                </td>
+                <td className="border-2 border-gray-900 p-1 text-center bg-green-50/20">
+                  <input
+                    type="text"
+                    value={row.p2}
+                    onChange={(e) => {
+                      const updated = [...cftData];
+                      updated[idx].p2 = e.target.value;
+                      setCftData(updated);
+                    }}
+                    className="w-full text-center font-bold text-xs outline-none bg-transparent"
+                  />
+                </td>
+                <td className="border-2 border-gray-900 p-1 text-center bg-yellow-50/20">
+                  <input
+                    type="text"
+                    value={row.p3}
+                    onChange={(e) => {
+                      const updated = [...cftData];
+                      updated[idx].p3 = e.target.value;
+                      setCftData(updated);
+                    }}
+                    className="w-full text-center font-bold text-xs outline-none bg-transparent"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Core Team Approvals */}
+      <div className="border-2 border-gray-900 p-4 mb-6">
+        <h4 className="text-xs font-black uppercase tracking-wider text-gray-800 mb-3">Approved By Core Team</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+          {["Production", "Quality", "Tooling & Fixtures", "Marketing", "Maintenance"].map((team, idx) => (
+            <div key={idx} className="border border-gray-300 p-2.5 rounded bg-white">
+              <span className="font-black text-gray-800 block mb-1">{team}</span>
+              <input type="text" placeholder="Sign / Approved" className="w-full text-xs font-bold border-b border-gray-200 outline-none pb-0.5 mb-1" />
+              <input type="date" className="w-full text-[10px] text-gray-600 outline-none" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Production Breakpoint & Traceability */}
+      <div className="grid grid-cols-1 md:grid-cols-3 border-2 border-gray-900 divide-y md:divide-y-0 md:divide-x-2 divide-gray-900 bg-gray-50/50 p-2">
+        <div className="p-2">
+          <span className="text-[10px] font-black uppercase text-gray-500 block">Brake point date:</span>
+          <input
+            type="date"
+            value={bottomInfo.brakePointDate}
+            onChange={(e) => setBottomInfo({ ...bottomInfo, brakePointDate: e.target.value })}
+            className="w-full font-bold outline-none border-b border-gray-300 bg-transparent text-xs"
+          />
+        </div>
+        <div className="p-2">
+          <span className="text-[10px] font-black uppercase text-gray-500 block">Invoice Details:</span>
+          <input
+            type="text"
+            placeholder="Invoice #"
+            value={bottomInfo.invoiceDetails}
+            onChange={(e) => setBottomInfo({ ...bottomInfo, invoiceDetails: e.target.value })}
+            className="w-full font-bold outline-none border-b border-gray-300 bg-transparent text-xs"
+          />
+        </div>
+        <div className="p-2">
+          <span className="text-[10px] font-black uppercase text-gray-500 block">Identification on Part/Box/Trolly:</span>
+          <input
+            type="text"
+            placeholder="Visual tag / ID sticker"
+            value={bottomInfo.identification}
+            onChange={(e) => setBottomInfo({ ...bottomInfo, identification: e.target.value })}
+            className="w-full font-bold outline-none border-b border-gray-300 bg-transparent text-xs"
+          />
+        </div>
+      </div>
+    </FormWrapper>
+  );
+};
+
+export default PtrInitiationForm;

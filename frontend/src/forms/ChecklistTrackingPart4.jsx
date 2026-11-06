@@ -1,0 +1,145 @@
+import React, { useState } from "react";
+import FormWrapper from "./FormWrapper";
+import ChecklistTrackingTable from "./ChecklistTrackingTable";
+
+const initialItemsPart4 = [
+  { name: "l) Active Parts list", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
+  { name: "j) PAP", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
+  { name: "k) IMTE / MMD", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
+];
+
+const ChecklistTrackingPart4 = () => {
+  const [items, setItems] = useState(initialItemsPart4);
+  const [details, setDetails] = useState({
+    actualImplementationDate: "",
+    stockActions: "",
+    toolingActions: "",
+    otherRemarks: "",
+    informedTo: { customer: false, marketing: false, planning: false, production: false, qa: false, qc: false }
+  });
+  const [savedMsg, setSavedMsg] = useState("");
+
+  const updateItem = (index, field, value) => {
+    const updated = [...items];
+    updated[index][field] = value;
+    setItems(updated);
+  };
+
+  const handleSave = () => {
+    localStorage.setItem("saved_tracking_part4", JSON.stringify({ items, details }));
+    setSavedMsg("Checklist Part 4 saved successfully!");
+    setTimeout(() => setSavedMsg(""), 3000);
+  };
+
+  return (
+    <FormWrapper
+      title="CHECKLIST FOR MANAGING AND TRACKING CHANGE (PAGE 4 OF 4)"
+      qfNo="QF/07/MRO-03"
+      revDate="01.12.2003"
+      onSave={handleSave}
+      onPrint={() => window.print()}
+    >
+      {savedMsg && (
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold">
+          {savedMsg}
+        </div>
+      )}
+
+      <ChecklistTrackingTable items={items} onUpdateItem={updateItem} />
+
+      {/* Implementation Details */}
+      <div className="border-2 border-gray-900 mb-6 divide-y-2 divide-gray-900">
+        <div className="p-3 bg-yellow-50/50">
+          <label className="text-xs font-black uppercase text-gray-800 block mb-1">
+            Actual date of implementation of change (By CFT & Planning):
+          </label>
+          <input
+            type="date"
+            value={details.actualImplementationDate}
+            onChange={(e) => setDetails({ ...details, actualImplementationDate: e.target.value })}
+            className="p-1 border border-gray-300 rounded font-bold text-xs outline-none bg-white focus:border-[#ff9100]"
+          />
+        </div>
+
+        <div className="p-3">
+          <label className="text-xs font-black uppercase text-gray-800 block mb-1">
+            Actions taken / Proposed on the Stock produce prior to modification (By CFT & Planning):
+          </label>
+          <textarea
+            rows="2"
+            value={details.stockActions}
+            onChange={(e) => setDetails({ ...details, stockActions: e.target.value })}
+            className="w-full p-2 border border-gray-300 rounded text-xs font-medium outline-none focus:border-[#ff9100]"
+            placeholder="Product changes / quarantine / disposition notes..."
+          />
+        </div>
+
+        <div className="p-3">
+          <label className="text-xs font-black uppercase text-gray-800 block mb-1">
+            Actions taken / Proposed on toolings of prior to modification (By CFT & Planning):
+          </label>
+          <textarea
+            rows="2"
+            value={details.toolingActions}
+            onChange={(e) => setDetails({ ...details, toolingActions: e.target.value })}
+            className="w-full p-2 border border-gray-300 rounded text-xs font-medium outline-none focus:border-[#ff9100]"
+            placeholder="Tooling rework / pattern modification plan..."
+          />
+        </div>
+
+        <div className="p-3">
+          <label className="text-xs font-black uppercase text-gray-800 block mb-1">
+            Any other Remarks:
+          </label>
+          <textarea
+            rows="2"
+            value={details.otherRemarks}
+            onChange={(e) => setDetails({ ...details, otherRemarks: e.target.value })}
+            className="w-full p-2 border border-gray-300 rounded text-xs font-medium outline-none focus:border-[#ff9100]"
+            placeholder="CFT concluding remarks..."
+          />
+        </div>
+      </div>
+
+      {/* Informed To Checklist */}
+      <div className="border-2 border-gray-900 p-4 mb-6 bg-gray-50 flex flex-wrap items-center justify-between gap-4">
+        <span className="font-black text-xs uppercase tracking-wider text-gray-800">Informed to:</span>
+        {["customer", "marketing", "planning", "production", "qa", "qc"].map((dept) => (
+          <label key={dept} className="flex items-center gap-2 cursor-pointer font-bold text-xs uppercase">
+            <input
+              type="checkbox"
+              checked={details.informedTo[dept]}
+              onChange={(e) =>
+                setDetails({
+                  ...details,
+                  informedTo: { ...details.informedTo, [dept]: e.target.checked }
+                })
+              }
+              className="w-4 h-4 accent-[#ff9100]"
+            />
+            {dept}
+          </label>
+        ))}
+      </div>
+
+      {/* Signoff Core Team Grid */}
+      <div className="border-2 border-gray-900 p-4">
+        <h4 className="text-xs font-black uppercase tracking-wider text-gray-800 mb-3">Prepared and Signed By CFT Core Team</h4>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+          {["Production", "Quality (QA)", "Marketing / Customer", "Plant Planning"].map((dept, idx) => (
+            <div key={idx} className="border border-gray-300 p-3 rounded bg-white">
+              <span className="font-black uppercase text-gray-700 block mb-2">{dept}</span>
+              <div className="space-y-1.5">
+                <input type="text" placeholder="Sign" className="w-full text-xs font-bold border-b border-gray-200 outline-none" />
+                <input type="text" placeholder="Name" className="w-full text-xs border-b border-gray-200 outline-none" />
+                <input type="text" placeholder="Title" className="w-full text-xs border-b border-gray-200 outline-none" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </FormWrapper>
+  );
+};
+
+export default ChecklistTrackingPart4;
