@@ -4,8 +4,119 @@
 
 @layer base {
   body {
-    background-color: #2d2d2d;
+    background-color: #242424;
     color: #ffffff;
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  /* User-friendly inputs on forms */
+  input[type="text"],
+  input[type="date"],
+  textarea,
+  select {
+    transition: all 0.15s ease-in-out;
+  }
+
+  input[type="text"]:focus,
+  input[type="date"]:focus,
+  textarea:focus,
+  select:focus {
+    background-color: #FFFDF7 !important;
+    outline: none !important;
+  }
+}
+
+/* ========================================
+   PRINT STYLES – BULLETPROOF PDF EXPORT
+   ======================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm 8mm 6mm 8mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 11px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide navigation, action bars, headers, toasts, and icons outside the form */
+  .print\:hidden,
+  header,
+  nav,
+  button,
+  .toast,
+  .animate-in {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Force the form container to be completely visible and fill printable width */
+  #printable-area,
+  .printable-form,
+  .printable {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Clean up form elements inside print */
+  input, textarea, select {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: #000000 !important;
+    resize: none !important;
+  }
+
+  /* Make sure borders between table cells remain sharp in print */
+  .border,
+  .border-b,
+  .border-t,
+  .border-l,
+  .border-r,
+  .border-\[1\.5px\],
+  .border-b-\[1\.5px\],
+  .border-t-\[1\.5px\],
+  .border-r-\[1\.5px\],
+  .border-l-\[1\.5px\],
+  .border-black,
+  .divide-black > * {
+    border-color: #000000 !important;
+  }
+
+  /* Maintain gray header bands in print */
+  .bg-\[\#d1d5db\],
+  .bg-\[\#f3f4f6\],
+  .bg-gray-100,
+  .bg-gray-50 {
+    background-color: #E5E7EB !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Checkboxes in print */
+  input[type="checkbox"] {
+    -webkit-appearance: checkbox !important;
+    appearance: checkbox !important;
+    border: 1.5px solid #000000 !important;
   }
 }

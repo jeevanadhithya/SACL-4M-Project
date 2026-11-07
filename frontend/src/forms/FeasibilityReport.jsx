@@ -1,269 +1,380 @@
+// Feasibility Report for Change Request – exact replica of the PDF form
 import React, { useState } from "react";
-import FormWrapper from "./FormWrapper";
+import { useNavigate } from "react-router-dom";
+import Header from "../components/Header";
+import FormHeader from "../components/FormHeader";
+import { ArrowLeft, Printer, Save, CheckCircle } from "lucide-react";
+import { generateFeasibilityReportPDF } from "../utils/pdfGenerators";
 
 const FeasibilityReport = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     slNo: "",
-    date: new Date().toISOString().split("T")[0],
-    fromDept: "",
-    toDept: "CFT",
+    date: "",
+    from: "",
+    to: "",
     partName: "",
     partNo: "",
     customer: "",
-    categoryOfChange: "Process Modification",
-    requirements: [
-      { id: "mfg", title: "Manufacturing Process / Product Requirement", desc: "", feasible: true },
-      { id: "sys", title: "System Requirement", desc: "", feasible: true },
-      { id: "insp", title: "Inspection Requirement", desc: "", feasible: true },
-      { id: "other", title: "Any Other Requirement", desc: "", feasible: true },
-      { id: "resource", title: "Additional Manufacturing or Inspection or other Resource requirement at Foundry / Machine Shop", desc: "", feasible: true }
-    ],
-    conclusion: "FEASIBLE",
-    cftMembers: Array(6).fill({ sign: "", date: "" }),
+    // Category of Change rows
+    manufacturingProcess: { requirements: "", feasible: "" },
+    systemRequirement: { requirements: "", feasible: "" },
+    inspectionRequirement: { requirements: "", feasible: "" },
+    anyOtherRequirement: { requirements: "", feasible: "" },
+    // Additional Manufacturing
+    additionalManufacturing: "",
+    // Conclusion
+    conclusionFeasible: false,
+    conclusionNotFeasible: false,
+    // CFT Members Sign / Date (6 slots)
+    cftMembers: ["", "", "", "", "", ""],
+    // Comments & Forwarded
     comments: "",
-    forwardedTo: ""
+    forwardedTo: "",
   });
 
-  const [savedMsg, setSavedMsg] = useState("");
+  const [toastMsg, setToastMsg] = useState("");
 
-  const handleSave = () => {
-    localStorage.setItem("saved_feasibility_report", JSON.stringify(formData));
-    setSavedMsg("Feasibility report saved successfully!");
-    setTimeout(() => setSavedMsg(""), 3000);
+  const handleSave = async () => {
+    localStorage.setItem("sakthi_feasibility_report", JSON.stringify(formData));
+
+    const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(`${apiUrl}/api/forms/feasibility-report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({
+          recordKey: formData.slNo || `SL-${Date.now()}`,
+          partName: formData.partName,
+          customer: formData.customer,
+          status: formData.conclusionFeasible ? "Approved" : "Pending",
+          formData,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Server save failed");
+      }
+
+      setToastMsg("Feasibility Report saved successfully to database!");
+    } catch (err) {
+      console.warn("Backend API unavailable, saved locally:", err.message);
+      setToastMsg("Saved locally in browser storage (Backend server offline).");
+    }
+
+    setTimeout(() => setToastMsg(""), 3500);
+  };
+
+  const handlePrint = () => {
+    try {
+      generateFeasibilityReportPDF(formData);
+      setToastMsg("Feasibility Report PDF generated successfully!");
+      setTimeout(() => setToastMsg(""), 3500);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      window.print();
+    }
+  };
+
+  const updateField = (field, value) => setFormData({ ...formData, [field]: value });
+
+  const updateCategoryRow = (category, subField, value) => {
+    setFormData({
+      ...formData,
+      [category]: { ...formData[category], [subField]: value },
+    });
+  };
+
+  const updateCftMember = (index, value) => {
+    const updated = [...formData.cftMembers];
+    updated[index] = value;
+    setFormData({ ...formData, cftMembers: updated });
   };
 
   return (
-    <FormWrapper
-      title="FEASIBILITY REPORT FOR CHANGE REQUEST"
-      qfNo="QF/07/MRO-02"
-      revDate="10/06/2015"
-      onSave={handleSave}
-      onPrint={() => window.print()}
-    >
-      {savedMsg && (
-        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold">
-          {savedMsg}
-        </div>
-      )}
+    <div className="min-h-screen bg-[#2d2d2d] flex flex-col font-sans text-gray-900">
+      {/* Navigation Header – hidden on print */}
+      <div className="print:hidden"><Header /></div>
 
-      {/* Header Info */}
-      <div className="border-2 border-gray-900 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x-2 divide-gray-900 border-b-2 border-gray-900 bg-gray-50/50">
-          <div className="p-3">
-            <span className="text-[10px] font-black uppercase text-gray-500 block">SL. No (of Change Request):</span>
-            <input
-              type="text"
-              value={formData.slNo}
-              onChange={(e) => setFormData({ ...formData, slNo: e.target.value })}
-              className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100] bg-transparent"
-              placeholder="e.g. CR-092"
-            />
-          </div>
-          <div className="p-3">
-            <span className="text-[10px] font-black uppercase text-gray-500 block">Date:</span>
-            <input
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100] bg-transparent"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x-2 divide-gray-900 border-b-2 border-gray-900">
-          <div className="p-3">
-            <span className="text-[10px] font-black uppercase text-gray-500 block">FROM (Dept Owner):</span>
-            <input
-              type="text"
-              value={formData.fromDept}
-              onChange={(e) => setFormData({ ...formData, fromDept: e.target.value })}
-              className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100]"
-              placeholder="Originating Dept"
-            />
-          </div>
-          <div className="p-3">
-            <span className="text-[10px] font-black uppercase text-gray-500 block">TO:</span>
-            <input
-              type="text"
-              value={formData.toDept}
-              readOnly
-              className="w-full font-bold outline-none text-gray-700 bg-gray-100 px-2 py-0.5 rounded cursor-not-allowed"
-            />
+      {/* Navigation & Action Bar */}
+      <div className="w-full max-w-[1200px] mx-auto p-3 sm:p-6 md:p-8 pb-4 print:hidden">
+        <div className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+          <button
+            onClick={() => navigate("/admin")}
+            className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors bg-[#383838] hover:bg-[#4a4a4a] px-4 py-2 rounded-xl border border-[#4a4a4a] shadow-md font-bold uppercase tracking-wider text-xs"
+          >
+            <ArrowLeft size={16} /> Back to Dashboard
+          </button>
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <span className="bg-yellow-100 text-yellow-900 border border-yellow-300 px-3 py-1.5 rounded-lg text-xs font-black uppercase shadow-sm">
+              QF/07/MRO-02 • Rev: 01
+            </span>
+            <button onClick={handlePrint} type="button"
+              className="bg-gray-800 hover:bg-black text-white px-5 py-2 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg transition-transform hover:-translate-y-0.5 border border-gray-700">
+              <Printer size={16} /> Print / Export PDF
+            </button>
+            <button onClick={handleSave} type="button"
+              className="bg-[#ff9100] hover:bg-orange-500 text-white px-6 py-2 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg transition-all hover:-translate-y-0.5 border border-[#ffaa33]">
+              <Save size={16} /> Save Record
+            </button>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x-2 divide-gray-900">
-          <div className="p-3">
-            <span className="text-[10px] font-black uppercase text-gray-500 block">Part Name:</span>
-            <input
-              type="text"
-              value={formData.partName}
-              onChange={(e) => setFormData({ ...formData, partName: e.target.value })}
-              className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100]"
-            />
+        {toastMsg && (
+          <div className="w-full max-w-[1020px] mx-auto mt-3 p-3 bg-green-100 border border-green-500 text-green-800 rounded-lg text-xs font-bold flex items-center gap-2 shadow-md animate-in fade-in print:hidden">
+            <CheckCircle size={16} className="text-green-600" />
+            <span>{toastMsg}</span>
           </div>
-          <div className="p-3">
-            <span className="text-[10px] font-black uppercase text-gray-500 block">Part No:</span>
-            <input
-              type="text"
-              value={formData.partNo}
-              onChange={(e) => setFormData({ ...formData, partNo: e.target.value })}
-              className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100]"
-            />
-          </div>
-          <div className="p-3">
-            <span className="text-[10px] font-black uppercase text-gray-500 block">Customer:</span>
-            <input
-              type="text"
-              value={formData.customer}
-              onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
-              className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100]"
-            />
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Category of Change */}
-      <div className="mb-6 p-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <span className="text-xs font-black uppercase tracking-wider text-yellow-900">
-          Category of Change (as per change request):
-        </span>
-        <select
-          value={formData.categoryOfChange}
-          onChange={(e) => setFormData({ ...formData, categoryOfChange: e.target.value })}
-          className="bg-white border-2 border-yellow-400 p-2 rounded-lg font-bold text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#ff9100]"
-        >
-          <option value="Process Modification">Process Modification</option>
-          <option value="Tooling / Pattern Change">Tooling / Pattern Change</option>
-          <option value="Material Specification">Material Specification</option>
-          <option value="Machine Parameter / Setting">Machine Parameter / Setting</option>
-          <option value="Drawing Revision">Drawing Revision</option>
-        </select>
-      </div>
+      {/* =====================================================================
+          PRINTABLE FORM – exact replica of the scanned PDF
+          Only this section appears in print/PDF output
+      ====================================================================== */}
+      <div id="printable-area" className="printable-form w-full max-w-[1020px] mx-auto bg-white p-4 sm:p-8 shadow-2xl rounded-none border-[2px] border-black print:border-none print:shadow-none print:p-0 print:max-w-full">
+        <div className="w-full border-[1.5px] border-black text-black text-xs font-sans">
 
-      {/* Requirements Table */}
-      <table className="w-full border-collapse border-2 border-gray-900 mb-6 text-sm">
-        <thead className="bg-gray-100 font-bold border-b-2 border-gray-900">
-          <tr>
-            <th className="border-2 border-gray-900 p-3 text-left w-1/4">Requirement Category</th>
-            <th className="border-2 border-gray-900 p-3 text-left w-1/2">Requirements of the Change</th>
-            <th className="border-2 border-gray-900 p-3 text-center w-1/4">Feasible / Not Feasible</th>
-          </tr>
-        </thead>
-        <tbody>
-          {formData.requirements.map((req, idx) => (
-            <tr key={req.id} className="border-b border-gray-300 hover:bg-gray-50">
-              <td className="border-2 border-gray-900 p-3 font-bold text-xs uppercase text-gray-800">
-                {req.title}
-              </td>
-              <td className="border-2 border-gray-900 p-3">
-                <textarea
-                  rows="2"
-                  placeholder="Detail requirements and capability..."
-                  value={req.desc}
-                  onChange={(e) => {
-                    const newReqs = [...formData.requirements];
-                    newReqs[idx].desc = e.target.value;
-                    setFormData({ ...formData, requirements: newReqs });
-                  }}
-                  className="w-full p-2 border border-gray-300 rounded outline-none font-medium text-xs focus:border-[#ff9100]"
-                />
-              </td>
-              <td className="border-2 border-gray-900 p-3 text-center">
-                <select
-                  value={req.feasible ? "YES" : "NO"}
-                  onChange={(e) => {
-                    const newReqs = [...formData.requirements];
-                    newReqs[idx].feasible = e.target.value === "YES";
-                    setFormData({ ...formData, requirements: newReqs });
-                  }}
-                  className={`p-2 rounded font-black text-xs uppercase border-2 outline-none ${
-                    req.feasible ? "bg-green-50 text-green-700 border-green-300" : "bg-red-50 text-red-700 border-red-300"
-                  }`}
-                >
-                  <option value="YES">✓ FEASIBLE</option>
-                  <option value="NO">✕ NOT FEASIBLE</option>
-                </select>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          {/* ROW 1: LOGO + TITLE */}
+          <FormHeader title="FEASIBILITY REPORT FOR CHANGE REQUEST" />
 
-      {/* Conclusion */}
-      <div className="border-2 border-gray-900 p-4 mb-6 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <span className="font-black text-sm uppercase tracking-wider text-gray-900">Conclusion:</span>
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2 cursor-pointer font-black text-sm text-green-800">
-            <input
-              type="radio"
-              name="conclusion"
-              value="FEASIBLE"
-              checked={formData.conclusion === "FEASIBLE"}
-              onChange={(e) => setFormData({ ...formData, conclusion: e.target.value })}
-              className="w-5 h-5 accent-green-600"
-            />
-            FEASIBLE
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer font-black text-sm text-red-800">
-            <input
-              type="radio"
-              name="conclusion"
-              value="NOT FEASIBLE"
-              checked={formData.conclusion === "NOT FEASIBLE"}
-              onChange={(e) => setFormData({ ...formData, conclusion: e.target.value })}
-              className="w-5 h-5 accent-red-600"
-            />
-            NOT FEASIBLE
-          </label>
-        </div>
-      </div>
-
-      {/* CFT Signatures Grid */}
-      <div className="border-2 border-gray-900 p-4 mb-6">
-        <h4 className="text-xs font-black uppercase tracking-wider text-gray-800 mb-3">CFT Members Sign / Date</h4>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((num) => (
-            <div key={num} className="border border-gray-300 p-2 rounded bg-white">
-              <span className="text-[10px] font-black text-gray-500 block mb-1">Member {num}:</span>
-              <input
-                type="text"
-                placeholder="Signature / Name"
-                className="w-full text-xs font-bold border-b border-gray-300 outline-none pb-1 mb-1 focus:border-[#ff9100]"
-              />
-              <input
-                type="date"
-                className="w-full text-[10px] font-medium text-gray-600 outline-none"
-              />
+          {/* ROW 2: SL No + Date row */}
+          <div className="grid grid-cols-12 border-b-[1.5px] border-black">
+            <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+              <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">SL. No (of Change Request) :</span>
+              <input type="text" value={formData.slNo}
+                onChange={(e) => updateField("slNo", e.target.value)}
+                className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs" />
             </div>
-          ))}
-        </div>
-      </div>
+            <div className="col-span-6 px-2 py-1.5 flex items-center">
+              <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Date :</span>
+              <input type="date" value={formData.date}
+                onChange={(e) => updateField("date", e.target.value)}
+                className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs" />
+            </div>
+          </div>
 
-      {/* Comments & Forwarded To */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="border-2 border-gray-900 p-3">
-          <span className="text-[10px] font-black uppercase text-gray-500 block mb-1">Comments:</span>
-          <textarea
-            rows="2"
-            value={formData.comments}
-            onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
-            className="w-full p-2 border border-gray-300 rounded outline-none text-xs font-medium focus:border-[#ff9100]"
-            placeholder="Additional CFT team notes..."
-          />
+          {/* ROW 3: FROM | TO */}
+          <div className="grid grid-cols-12 border-b-[1.5px] border-black">
+            <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+              <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">FROM :</span>
+              <input type="text" value={formData.from}
+                onChange={(e) => updateField("from", e.target.value)}
+                className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs" />
+            </div>
+            <div className="col-span-6 px-2 py-1.5 flex items-center">
+              <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">TO :</span>
+              <input type="text" value={formData.to}
+                onChange={(e) => updateField("to", e.target.value)}
+                className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs" />
+            </div>
+          </div>
+
+          {/* ROW 4: Part Name */}
+          <div className="border-b-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Part Name :-</span>
+            <input type="text" value={formData.partName}
+              onChange={(e) => updateField("partName", e.target.value)}
+              className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs" />
+          </div>
+
+          {/* ROW 5: Part No */}
+          <div className="border-b-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Part No :-</span>
+            <input type="text" value={formData.partNo}
+              onChange={(e) => updateField("partNo", e.target.value)}
+              className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs" />
+          </div>
+
+          {/* ROW 6: Customer */}
+          <div className="border-b-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Customer :-</span>
+            <input type="text" value={formData.customer}
+              onChange={(e) => updateField("customer", e.target.value)}
+              className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs" />
+          </div>
+
+          {/* ROW 7: CATEGORY OF CHANGE header */}
+          <div className="border-b-[1.5px] border-black px-2 py-1.5 bg-white">
+            <span className="font-black uppercase text-[10px] tracking-wider">CATEGORY OF CHANGE</span>
+            <br />
+            <span className="text-[9px] text-gray-600">(as per the change request)</span>
+          </div>
+
+          {/* ROW 8: Table Header — blank | REQUIREMENTS OF THE CHANGE | FEASIBLE / NOT FEASIBLE */}
+          <div className="grid grid-cols-12 border-b-[1.5px] border-black bg-white">
+            <div className="col-span-3 border-r-[1.5px] border-black px-2 py-2">
+              {/* empty label column */}
+            </div>
+            <div className="col-span-6 border-r-[1.5px] border-black px-2 py-2 text-center">
+              <span className="font-black uppercase text-[10px] tracking-wider">REQUIREMENTS OF THE CHANGE</span>
+            </div>
+            <div className="col-span-3 px-2 py-2 text-center">
+              <span className="font-black uppercase text-[10px] tracking-wider">FEASIBLE / NOT FEASIBLE</span>
+            </div>
+          </div>
+
+          {/* Category Row: Manufacturing Process / Product Requirement */}
+          <div className="grid grid-cols-12 border-b-[1.5px] border-black min-h-[60px]">
+            <div className="col-span-3 border-r-[1.5px] border-black px-2 py-2 flex items-start">
+              <span className="font-bold text-[10px]">Manufacturing Process / Product Requirement</span>
+            </div>
+            <div className="col-span-6 border-r-[1.5px] border-black px-1 py-1">
+              <textarea rows="3" value={formData.manufacturingProcess.requirements}
+                onChange={(e) => updateCategoryRow("manufacturingProcess", "requirements", e.target.value)}
+                className="w-full h-full text-xs outline-none resize-none bg-transparent border-0 p-1" />
+            </div>
+            <div className="col-span-3 px-1 py-1">
+              <textarea rows="3" value={formData.manufacturingProcess.feasible}
+                onChange={(e) => updateCategoryRow("manufacturingProcess", "feasible", e.target.value)}
+                className="w-full h-full text-xs outline-none resize-none bg-transparent border-0 p-1" />
+            </div>
+          </div>
+
+          {/* Category Row: System Requirement */}
+          <div className="grid grid-cols-12 border-b-[1.5px] border-black min-h-[60px]">
+            <div className="col-span-3 border-r-[1.5px] border-black px-2 py-2 flex items-start">
+              <span className="font-bold text-[10px]">System Requirement</span>
+            </div>
+            <div className="col-span-6 border-r-[1.5px] border-black px-1 py-1">
+              <textarea rows="3" value={formData.systemRequirement.requirements}
+                onChange={(e) => updateCategoryRow("systemRequirement", "requirements", e.target.value)}
+                className="w-full h-full text-xs outline-none resize-none bg-transparent border-0 p-1" />
+            </div>
+            <div className="col-span-3 px-1 py-1">
+              <textarea rows="3" value={formData.systemRequirement.feasible}
+                onChange={(e) => updateCategoryRow("systemRequirement", "feasible", e.target.value)}
+                className="w-full h-full text-xs outline-none resize-none bg-transparent border-0 p-1" />
+            </div>
+          </div>
+
+          {/* Category Row: Inspection Requirement */}
+          <div className="grid grid-cols-12 border-b-[1.5px] border-black min-h-[60px]">
+            <div className="col-span-3 border-r-[1.5px] border-black px-2 py-2 flex items-start">
+              <span className="font-bold text-[10px]">Inspection Requirement</span>
+            </div>
+            <div className="col-span-6 border-r-[1.5px] border-black px-1 py-1">
+              <textarea rows="3" value={formData.inspectionRequirement.requirements}
+                onChange={(e) => updateCategoryRow("inspectionRequirement", "requirements", e.target.value)}
+                className="w-full h-full text-xs outline-none resize-none bg-transparent border-0 p-1" />
+            </div>
+            <div className="col-span-3 px-1 py-1">
+              <textarea rows="3" value={formData.inspectionRequirement.feasible}
+                onChange={(e) => updateCategoryRow("inspectionRequirement", "feasible", e.target.value)}
+                className="w-full h-full text-xs outline-none resize-none bg-transparent border-0 p-1" />
+            </div>
+          </div>
+
+          {/* Category Row: Any Other Requirement */}
+          <div className="grid grid-cols-12 border-b-[1.5px] border-black min-h-[60px]">
+            <div className="col-span-3 border-r-[1.5px] border-black px-2 py-2 flex items-start">
+              <span className="font-bold text-[10px]">Any Other Requirement</span>
+            </div>
+            <div className="col-span-6 border-r-[1.5px] border-black px-1 py-1">
+              <textarea rows="3" value={formData.anyOtherRequirement.requirements}
+                onChange={(e) => updateCategoryRow("anyOtherRequirement", "requirements", e.target.value)}
+                className="w-full h-full text-xs outline-none resize-none bg-transparent border-0 p-1" />
+            </div>
+            <div className="col-span-3 px-1 py-1">
+              <textarea rows="3" value={formData.anyOtherRequirement.feasible}
+                onChange={(e) => updateCategoryRow("anyOtherRequirement", "feasible", e.target.value)}
+                className="w-full h-full text-xs outline-none resize-none bg-transparent border-0 p-1" />
+            </div>
+          </div>
+
+          {/* Additional Manufacturing or Inspection section */}
+          <div className="border-b-[1.5px] border-black">
+            <div className="px-2 py-1.5 border-b border-gray-300">
+              <span className="font-bold text-[10px]">
+                Additional Manufacturing or Inspection or other Resource requirement at Foundry / Machine Shop
+              </span>
+            </div>
+            <div className="min-h-[80px] px-1 py-1">
+              <textarea rows="4" value={formData.additionalManufacturing}
+                onChange={(e) => updateField("additionalManufacturing", e.target.value)}
+                className="w-full h-full text-xs outline-none resize-none bg-transparent border-0 p-1" />
+            </div>
+          </div>
+
+          {/* CONCLUSION row */}
+          <div className="grid grid-cols-12 border-b-[1.5px] border-black min-h-[50px]">
+            <div className="col-span-6 border-r-[1.5px] border-black px-2 py-2 flex items-center">
+              <span className="font-black uppercase text-[10px] tracking-wider">CONCLUSION :</span>
+            </div>
+            <div className="col-span-6 px-3 py-2 flex flex-col justify-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={formData.conclusionFeasible}
+                  onChange={(e) => setFormData({ ...formData, conclusionFeasible: e.target.checked, conclusionNotFeasible: false })}
+                  className="w-4 h-4 border-[1.5px] border-black accent-black cursor-pointer" />
+                <span className="font-black uppercase text-[10px]">FEASIBLE</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={formData.conclusionNotFeasible}
+                  onChange={(e) => setFormData({ ...formData, conclusionNotFeasible: e.target.checked, conclusionFeasible: false })}
+                  className="w-4 h-4 border-[1.5px] border-black accent-black cursor-pointer" />
+                <span className="font-black uppercase text-[10px]">NOT FEASIBLE</span>
+              </label>
+            </div>
+          </div>
+
+          {/* CFT MEMBERS SIGN / DATE – 2 columns × 3 rows = 6 slots */}
+          <div className="grid grid-cols-12 border-b-[1.5px] border-black">
+            <div className="col-span-3 border-r-[1.5px] border-black px-2 py-2 flex items-center">
+              <span className="font-black uppercase text-[10px] tracking-wider leading-tight">CFT MEMBERS SIGN / DATE</span>
+            </div>
+            <div className="col-span-4 border-r-[1.5px] border-black flex flex-col divide-y divide-black">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="px-2 py-1.5 flex items-center">
+                  <span className="font-bold text-[10px] mr-1">{i + 1}.</span>
+                  <input type="text" value={formData.cftMembers[i]}
+                    onChange={(e) => updateCftMember(i, e.target.value)}
+                    className="w-full text-xs outline-none bg-transparent px-1" />
+                </div>
+              ))}
+            </div>
+            <div className="col-span-5 flex flex-col divide-y divide-black">
+              {[3, 4, 5].map((i) => (
+                <div key={i} className="px-2 py-1.5 flex items-center">
+                  <span className="font-bold text-[10px] mr-1">{i + 1}.</span>
+                  <input type="text" value={formData.cftMembers[i]}
+                    onChange={(e) => updateCftMember(i, e.target.value)}
+                    className="w-full text-xs outline-none bg-transparent px-1" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* COMMENTS & FORWARDED TO */}
+          <div className="grid grid-cols-12 border-b-[1.5px] border-black">
+            <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+              <span className="font-black uppercase text-[10px] whitespace-nowrap mr-1">COMMENTS :-</span>
+              <input type="text" value={formData.comments}
+                onChange={(e) => updateField("comments", e.target.value)}
+                className="w-full text-xs outline-none bg-transparent px-1 font-bold" />
+            </div>
+            <div className="col-span-6 px-2 py-1.5 flex items-center">
+              <span className="font-black uppercase text-[10px] whitespace-nowrap mr-1">FORWARDED TO :</span>
+              <input type="text" value={formData.forwardedTo}
+                onChange={(e) => updateField("forwardedTo", e.target.value)}
+                className="w-full text-xs outline-none bg-transparent px-1 font-bold" />
+            </div>
+          </div>
+
         </div>
-        <div className="border-2 border-gray-900 p-3">
-          <span className="text-[10px] font-black uppercase text-gray-500 block mb-1">Forwarded To (Acknowledgement):</span>
-          <input
-            type="text"
-            value={formData.forwardedTo}
-            onChange={(e) => setFormData({ ...formData, forwardedTo: e.target.value })}
-            className="w-full p-2 border border-gray-300 rounded outline-none text-xs font-bold focus:border-[#ff9100]"
-            placeholder="Recipient Department / Leader"
-          />
+
+        {/* Footer line */}
+        <div className="flex justify-between items-center text-[10px] font-bold text-gray-800 mt-2 px-1">
+          <span className="font-mono tracking-tight">QF / 07 / MRO – 02</span>
+          <span className="font-mono tracking-tight">10 / 06 / 2015</span>
         </div>
       </div>
-    </FormWrapper>
+    </div>
   );
 };
 

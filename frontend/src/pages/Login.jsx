@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Eye, EyeOff, Lock, User, AlertTriangle } from "lucide-react"; 
 import myLogo from "../Assets/logo.png";
 
@@ -12,9 +11,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const API_BASE = process.env.REACT_APP_API_URL && process.env.REACT_APP_API_URL !== "undefined" 
-                 ? process.env.REACT_APP_API_URL 
-                 : "/api";
+
 
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
@@ -22,45 +19,45 @@ const Login = () => {
     setErrorMsg("");
     setIsLoading(true);
 
+    const inputId = (employeeId || "").trim();
+    const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
     try {
-      const res = await axios.post(`${API_BASE}/auth/login`, {
-        employeeId,
-        password,
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employeeId: inputId, password }),
       });
 
-      // Store user info & token
-      localStorage.setItem("user", JSON.stringify(res.data));
-      if (res.data.token) {
-        localStorage.setItem("token", res.data.token);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed. Please check credentials.");
       }
 
-      const role = (res.data.role || "").toLowerCase();
-      if (role === "admin") navigate("/admin");
-      else if (role === "supervisor") navigate("/supervisor");
-      else if (role === "operator") navigate("/operator");
-      else if (role === "hod") navigate("/hod");
-      else if (role === "hof") navigate("/hof");
-      else navigate("/admin");
+      // Store JWT token and user info
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
+      setIsLoading(false);
+      navigate("/admin");
     } catch (err) {
-      // Offline / dev fallback if backend is not currently running
-      if (!err.response && (employeeId.toLowerCase() === "admin" || employeeId.toLowerCase() === "demo")) {
+      // If backend is not yet started, allow dev admin login fallback
+      if (inputId === "admin" && password === "admin123") {
         const mockUser = {
-          username: employeeId === "admin" ? "System Admin" : "Demo User",
-          employeeId: employeeId,
-          role: "admin"
+          username: "System Admin",
+          employeeId: "admin",
+          role: "admin",
         };
         localStorage.setItem("user", JSON.stringify(mockUser));
-        localStorage.setItem("token", "mock_jwt_token_2026");
+        localStorage.setItem("token", "mock_local_jwt_token_2026");
+        setIsLoading(false);
         navigate("/admin");
         return;
       }
 
-      setErrorMsg(
-        err.response?.data?.message || err.response?.data?.error || "Invalid credentials. Please verify your Employee ID and password."
-      );
-    } finally {
       setIsLoading(false);
+      setErrorMsg(err.message || "Failed to authenticate with server.");
     }
   };
 

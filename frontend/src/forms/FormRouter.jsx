@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import ChangeRequisitionForm from "./ChangeRequisitionForm";
+import ChangeRequisitionForm from "./ProcessChangeRequisitionForm";
 import FeasibilityReport from "./FeasibilityReport";
 import RiskAnalysisCheckSheet from "./RiskAnalysisCheckSheet";
 import TimingPlan from "./TimingPlan";
@@ -13,7 +13,7 @@ import PpapInitiationForm from "./PpapInitiationForm";
 import Header from "../components/Header";
 
 const formMapping = {
-  "change-requisition": <ChangeRequisitionForm />,
+  "process-change-requisition": <ChangeRequisitionForm />,
   "feasibility-report": <FeasibilityReport />,
   "risk-analysis": <RiskAnalysisCheckSheet />,
   "timing-plan": <TimingPlan />,
