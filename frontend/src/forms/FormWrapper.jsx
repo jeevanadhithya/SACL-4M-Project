@@ -2,9 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import FormHeader from "../components/FormHeader";
-import { ArrowLeft, Printer, Save, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Save, AlertTriangle, FileDown, Loader } from "lucide-react";
 
-const FormWrapper = ({ title, qfNo, revDate, children, onSave, onPrint, isSaving }) => {
+const FormWrapper = ({ title, qfNo, revDate, children, onSave, onPrint, isSaving, isDownloadingPdf }) => {
   const navigate = useNavigate();
 
   return (
@@ -25,16 +25,25 @@ const FormWrapper = ({ title, qfNo, revDate, children, onSave, onPrint, isSaving
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             <span className="bg-yellow-50 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-lg text-xs font-black uppercase flex items-center gap-1.5 shadow-sm">
-              <AlertTriangle size={14} className="text-yellow-600" /> Consultancy Standard
+              <AlertTriangle size={14} className="text-yellow-600" /> {qfNo || "Consultancy Standard"}
             </span>
 
             {onPrint && (
               <button
                 type="button"
                 onClick={onPrint}
-                className="bg-gray-800 hover:bg-black text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg transition-transform hover:-translate-y-0.5 border border-gray-700"
+                disabled={isDownloadingPdf}
+                className="bg-gray-800 hover:bg-black text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg transition-transform hover:-translate-y-0.5 border border-gray-700 disabled:opacity-60"
               >
-                <Printer size={16} /> Print / PDF
+                {isDownloadingPdf ? (
+                  <>
+                    <Loader size={16} className="animate-spin text-[#ff9100]" /> Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <FileDown size={16} /> Print / Export PDF
+                  </>
+                )}
               </button>
             )}
 

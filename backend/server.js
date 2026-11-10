@@ -8,6 +8,15 @@ const formRoutes = require("./routes/formRoutes");
 const userRoutes = require("./routes/userRoutes");
 const { verifyToken } = require("./middleware/authMiddleware");
 
+// Dedicated Form Controllers & PDFKit Streaming Routes (Machine Shop v2 Architecture)
+const processChangeRequisitionRoutes = require("./routes/processChangeRequisitionRoutes");
+const feasibilityReportRoutes = require("./routes/feasibilityReportRoutes");
+const riskAnalysisRoutes = require("./routes/riskAnalysisRoutes");
+const timingPlanRoutes = require("./routes/timingPlanRoutes");
+const checklistTrackingRoutes = require("./routes/checklistTrackingRoutes");
+const ptrInitiationRoutes = require("./routes/ptrInitiationRoutes");
+const ppapInitiationRoutes = require("./routes/ppapInitiationRoutes");
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -32,7 +41,16 @@ app.get("/health", (req, res) => {
 // Authentication Routes (Public)
 app.use("/api/auth", authRoutes);
 
-// Protected Consultancy Forms Routes
+// Dedicated Form Controllers & PDFKit Streaming Endpoints
+app.use("/api", processChangeRequisitionRoutes);
+app.use("/api", feasibilityReportRoutes);
+app.use("/api", riskAnalysisRoutes);
+app.use("/api", timingPlanRoutes);
+app.use("/api", checklistTrackingRoutes);
+app.use("/api", ptrInitiationRoutes);
+app.use("/api", ppapInitiationRoutes);
+
+// Generic Protected Consultancy Forms Routes
 app.use("/api/forms", formRoutes);
 
 // Protected User Management Routes
@@ -54,10 +72,9 @@ app.listen(PORT, async () => {
   console.log(`====================================================`);
   console.log(`🚀 Sakthi Auto Component API Server running on port ${PORT}`);
   console.log(`🌐 Base URL: http://localhost:${PORT}`);
-  console.log(`📋 Forms API: http://localhost:${PORT}/api/forms`);
+  console.log(`📋 Dedicated Form Controllers & Streaming PDFs mounted`);
   console.log(`🔐 Auth API:  http://localhost:${PORT}/api/auth`);
   console.log(`====================================================`);
-  // Trigger DB pool initialization
   await poolPromise;
 });
 
