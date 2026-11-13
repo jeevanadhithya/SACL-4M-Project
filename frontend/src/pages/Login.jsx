@@ -81,7 +81,7 @@ const Login = () => {
             Component Limited
           </p>
           <p className="mt-6 text-gray-400 font-medium tracking-wide max-w-sm">
-            Internal Production & Quality Management Portal
+            SACL - Internal Portal
           </p>
           <div className="mt-12 w-20 h-1.5 bg-[#ff9100] rounded-full shadow-[0_0_15px_rgba(255,145,0,0.5)]"></div>
         </div>

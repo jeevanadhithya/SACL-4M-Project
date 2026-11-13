@@ -1,9 +1,0 @@
-{
-  "short_name": "Sakthi Auto",
-  "name": "Sakthi Auto Component Limited Portal",
-  "icons": [],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#050B14",
-  "background_color": "#2d2d2d"
-}
