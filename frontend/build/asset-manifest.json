@@ -1,21 +1,21 @@
 {
   "files": {
-    "main.css": "/static/css/main.9be60d75.css",
-    "main.js": "/static/js/main.d3476004.js",
+    "main.css": "/static/css/main.474f9c4b.css",
+    "main.js": "/static/js/main.a8c0a5b5.js",
     "static/js/239.e39fb35b.chunk.js": "/static/js/239.e39fb35b.chunk.js",
     "static/js/977.240addac.chunk.js": "/static/js/977.240addac.chunk.js",
-    "static/js/455.a9ba13ed.chunk.js": "/static/js/455.a9ba13ed.chunk.js",
+    "static/js/455.1c57994c.chunk.js": "/static/js/455.1c57994c.chunk.js",
     "static/media/SakthiLogo.png": "/static/media/SakthiLogo.ff0928a931962e294143.png",
     "static/media/logo.png": "/static/media/logo.d668bb84197b2a923560.png",
     "index.html": "/index.html",
-    "main.9be60d75.css.map": "/static/css/main.9be60d75.css.map",
-    "main.d3476004.js.map": "/static/js/main.d3476004.js.map",
+    "main.474f9c4b.css.map": "/static/css/main.474f9c4b.css.map",
+    "main.a8c0a5b5.js.map": "/static/js/main.a8c0a5b5.js.map",
     "239.e39fb35b.chunk.js.map": "/static/js/239.e39fb35b.chunk.js.map",
     "977.240addac.chunk.js.map": "/static/js/977.240addac.chunk.js.map",
-    "455.a9ba13ed.chunk.js.map": "/static/js/455.a9ba13ed.chunk.js.map"
+    "455.1c57994c.chunk.js.map": "/static/js/455.1c57994c.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.9be60d75.css",
-    "static/js/main.d3476004.js"
+    "static/css/main.474f9c4b.css",
+    "static/js/main.a8c0a5b5.js"
   ]
 }

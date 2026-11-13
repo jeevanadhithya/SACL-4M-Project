@@ -2,6 +2,7 @@ const { sql, poolPromise } = require("../db");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const { getLogoPath, drawCheckbox, drawFormHeader } = require("../utils/pdfTheme");
 
 exports.getRecord = async (req, res) => {
   const { recordKey, partNo, date } = req.query;
@@ -121,29 +122,31 @@ exports.generateReport = async (req, res) => {
     let currentY = 20;
 
     // Header
-    doc.lineWidth(1).rect(startX, currentY, pageWidth, 45).stroke();
-    const logoPath = path.join(__dirname, "logo.jpg");
-    if (fs.existsSync(logoPath)) {
-      try { doc.image(logoPath, startX + 5, currentY + 4, { width: 40, height: 36 }); } catch (e) {}
-    }
+    const headerH = drawFormHeader(doc, {
+      startX,
+      currentY,
+      pageWidth,
+      title: "RISK ANALYSIS CHECK SHEET",
+      qfNo: "QF/07/MKT-14 Rev.02",
+      docNo: formData.meta?.partNo || "-",
+      revDate: "dt 13.02.2019",
+    });
+    currentY += headerH;
 
-    doc.font("Helvetica-Bold").fontSize(13).text("SAKTHI AUTO COMPONENT LIMITED", startX + 50, currentY + 10, { width: pageWidth - 250, align: "center" });
-    doc.font("Helvetica-Bold").fontSize(11).text("RISK ANALYSIS CHECK SHEET", startX + 50, currentY + 26, { width: pageWidth - 250, align: "center" });
-
-    doc.lineWidth(0.5).rect(startX + pageWidth - 180, currentY, 180, 45).stroke();
-    doc.font("Helvetica").fontSize(7.5);
-    doc.text(`Part Name: ${formData.meta?.partName || "-"}`, startX + pageWidth - 175, currentY + 8);
-    doc.text(`Customer: ${formData.meta?.customer || "-"}`, startX + pageWidth - 175, currentY + 18);
-    doc.text(`Part No: ${formData.meta?.partNo || "-"}`, startX + pageWidth - 175, currentY + 27);
-    doc.font("Helvetica-Bold").text("QF/07/MKT-14 Rev.02", startX + pageWidth - 175, currentY + 36);
-
-    currentY += 45;
+    // Meta row
+    const metaH = 18;
+    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, metaH).stroke();
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#374151");
+    doc.text(`Part Name: ${formData.meta?.partName || "-"}`, startX + 6, currentY + 5);
+    doc.text(`Customer: ${formData.meta?.customer || "-"}`, startX + 280, currentY + 5);
+    doc.text(`Part No: ${formData.meta?.partNo || "-"}`, startX + 540, currentY + 5);
+    currentY += metaH;
 
     // Table Header
     const colW = [30, 80, 160, 140, 35, 35, 35, 35, 65, 186];
     const thH = 22;
-    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, thH).fillAndStroke("#F0F0F0", "#000000");
-    doc.fillColor("#000000").font("Helvetica-Bold").fontSize(7.5);
+    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, thH).fillAndStroke("#F3F4F6", "#000000");
+    doc.fillColor("#111827").font("Helvetica-Bold").fontSize(7.5);
 
     let curX = startX;
     const colTitles = ["S.No", "CATEGORY", "RISK POINTS", "CONTROL METHOD", "HIGH", "LOW", "MED", "NA", "EFFECT QCD", "ACTIONS"];
@@ -158,7 +161,7 @@ exports.generateReport = async (req, res) => {
     rows.forEach((r, idx) => {
       const itemH = 18;
       doc.lineWidth(0.5).rect(startX, currentY, pageWidth, itemH).stroke();
-      doc.font("Helvetica").fontSize(7);
+      doc.font("Helvetica").fontSize(7).fillColor("#000000");
 
       let x = startX;
       doc.text(String(idx + 1), x + 2, currentY + 5, { width: colW[0] - 4, align: "center" }); x += colW[0];
@@ -166,10 +169,10 @@ exports.generateReport = async (req, res) => {
       doc.font("Helvetica").text(r.point || "-", x + 2, currentY + 5, { width: colW[2] - 4 }); x += colW[2];
       doc.text(r.control || "-", x + 2, currentY + 5, { width: colW[3] - 4 }); x += colW[3];
 
-      doc.text(r.risk === "HIGH" ? "[X]" : "[ ]", x + 2, currentY + 5, { width: colW[4] - 4, align: "center" }); x += colW[4];
-      doc.text(r.risk === "LOW" ? "[X]" : "[ ]", x + 2, currentY + 5, { width: colW[5] - 4, align: "center" }); x += colW[5];
-      doc.text(r.risk === "MEDIUM" ? "[X]" : "[ ]", x + 2, currentY + 5, { width: colW[6] - 4, align: "center" }); x += colW[6];
-      doc.text(r.risk === "NA" ? "[X]" : "[ ]", x + 2, currentY + 5, { width: colW[7] - 4, align: "center" }); x += colW[7];
+      drawCheckbox(doc, x + (colW[4] - 9) / 2, currentY + 4, r.risk === "HIGH", 9); x += colW[4];
+      drawCheckbox(doc, x + (colW[5] - 9) / 2, currentY + 4, r.risk === "LOW", 9); x += colW[5];
+      drawCheckbox(doc, x + (colW[6] - 9) / 2, currentY + 4, r.risk === "MEDIUM", 9); x += colW[6];
+      drawCheckbox(doc, x + (colW[7] - 9) / 2, currentY + 4, r.risk === "NA", 9); x += colW[7];
 
       doc.text(r.qcd || "-", x + 2, currentY + 5, { width: colW[8] - 4, align: "center" }); x += colW[8];
       doc.text(r.actions || "-", x + 2, currentY + 5, { width: colW[9] - 4 });

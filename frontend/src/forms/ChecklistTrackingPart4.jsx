@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import FormWrapper from "./FormWrapper";
 import ChecklistTrackingTable from "./ChecklistTrackingTable";
+import GreenTickBox from "../components/GreenTickBox";
 
 const initialItemsPart4 = [
   { name: "l) Active Parts list", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
@@ -9,14 +10,28 @@ const initialItemsPart4 = [
 ];
 
 const ChecklistTrackingPart4 = () => {
+  const [meta, setMeta] = useState({
+    productCode: "",
+    customerName: "",
+    productDescription: "",
+    customerPartNo: ""
+  });
+
   const [items, setItems] = useState(initialItemsPart4);
   const [details, setDetails] = useState({
     actualImplementationDate: "",
     stockActions: "",
     toolingActions: "",
     otherRemarks: "",
-    informedTo: { customer: false, marketing: false, planning: false, production: false, qa: false, qc: false }
+    informedTo: { customer: false, marketing: false, planning: false, production: false, qa: false, qc: false },
+    signOff: {
+      cft: { sign: "", name: "", date: "" },
+      planning: { sign: "", name: "", date: "" },
+      qa: { sign: "", name: "", date: "" },
+      qc: { sign: "", name: "", date: "" }
+    }
   });
+
   const [savedMsg, setSavedMsg] = useState("");
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
@@ -27,7 +42,7 @@ const ChecklistTrackingPart4 = () => {
   };
 
   const handleSave = async () => {
-    localStorage.setItem("saved_tracking_part4", JSON.stringify({ items, details }));
+    localStorage.setItem("saved_tracking_part4", JSON.stringify({ meta, items, details }));
 
     const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
     const token = localStorage.getItem("token");
@@ -41,8 +56,9 @@ const ChecklistTrackingPart4 = () => {
         },
         body: JSON.stringify({
           part: 4,
-          partNo: `CT4-${Date.now()}`,
-          formData: { items, details },
+          partNo: meta.customerPartNo || meta.productCode || `CT4-${Date.now()}`,
+          customer: meta.customerName,
+          formData: { meta, items, details },
         }),
       });
 
@@ -57,10 +73,11 @@ const ChecklistTrackingPart4 = () => {
   const handlePrint = async () => {
     setIsDownloadingPdf(true);
     const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+    const key = meta.customerPartNo || meta.productCode || "Tracking_Part4";
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${apiUrl}/api/change-tracking/report?part=4`, {
+      const res = await fetch(`${apiUrl}/api/change-tracking/report?partNo=${encodeURIComponent(key)}&part=4`, {
         method: "GET",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -70,7 +87,7 @@ const ChecklistTrackingPart4 = () => {
         const downloadUrl = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = downloadUrl;
-        link.download = "Checklist_Tracking_Part4.pdf";
+        link.download = `Checklist_Tracking_Page4_${key}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -89,7 +106,7 @@ const ChecklistTrackingPart4 = () => {
 
   return (
     <FormWrapper
-      title="CHECKLIST FOR MANAGING AND TRACKING CHANGE (PAGE 4 OF 4)"
+      title="CHECKLIST FOR MANAGING AND TRACKING CHANGE"
       qfNo="QF/07/MRO-03"
       revDate="01.12.2003"
       onSave={handleSave}
@@ -97,103 +114,217 @@ const ChecklistTrackingPart4 = () => {
       isDownloadingPdf={isDownloadingPdf}
     >
       {savedMsg && (
-        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold">
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold print:hidden">
           {savedMsg}
         </div>
       )}
 
+      {/* Header Info Block */}
+      <div className="border-b-[1.5px] border-black text-xs">
+        <div className="grid grid-cols-12 border-b-[1.5px] border-black">
+          <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">PRODUCT CODE :-</span>
+            <input
+              type="text"
+              value={meta.productCode}
+              onChange={(e) => setMeta({ ...meta, productCode: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-6 px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">CUSTOMER NAME :-</span>
+            <input
+              type="text"
+              value={meta.customerName}
+              onChange={(e) => setMeta({ ...meta, customerName: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-12">
+          <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">PRODUCT DESCRIPTION :-</span>
+            <input
+              type="text"
+              value={meta.productDescription}
+              onChange={(e) => setMeta({ ...meta, productDescription: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-6 px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">CUSTOMER PART NO :-</span>
+            <input
+              type="text"
+              value={meta.customerPartNo}
+              onChange={(e) => setMeta({ ...meta, customerPartNo: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+        </div>
+      </div>
+
       <ChecklistTrackingTable items={items} onUpdateItem={updateItem} />
 
-      {/* Implementation Details */}
-      <div className="border-2 border-gray-900 mb-6 divide-y-2 divide-gray-900">
-        <div className="p-3 bg-yellow-50/50">
-          <label className="text-xs font-black uppercase text-gray-800 block mb-1">
-            Actual date of implementation of change (By CFT & Planning):
+      {/* Implementation Details – exact scanned grid */}
+      <div className="border-t-[1.5px] border-black text-xs divide-y-[1.5px] divide-black">
+        <div className="p-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <label className="font-bold text-[10px] uppercase">
+            Actual date of implementation of change (By CFT & Planning) :
           </label>
           <input
             type="date"
             value={details.actualImplementationDate}
             onChange={(e) => setDetails({ ...details, actualImplementationDate: e.target.value })}
-            className="p-1 border border-gray-300 rounded font-bold text-xs outline-none bg-white focus:border-[#ff9100]"
+            className="p-1 border border-gray-400 font-bold text-xs bg-white"
           />
         </div>
 
-        <div className="p-3">
-          <label className="text-xs font-black uppercase text-gray-800 block mb-1">
-            Actions taken / Proposed on the Stock produce prior to modification (By CFT & Planning):
+        <div className="p-2">
+          <label className="font-bold text-[10px] uppercase block mb-1">
+            Actions taken / Proposed on the Stock produce prior to modification (By CFT & Planning) :
+            <span className="text-[9px] font-normal text-gray-600 ml-1">(Product changes only)</span>
           </label>
           <textarea
             rows="2"
             value={details.stockActions}
             onChange={(e) => setDetails({ ...details, stockActions: e.target.value })}
-            className="w-full p-2 border border-gray-300 rounded text-xs font-medium outline-none focus:border-[#ff9100]"
-            placeholder="Product changes / quarantine / disposition notes..."
+            className="w-full p-1.5 border border-gray-300 text-xs font-medium outline-none bg-transparent"
+            placeholder="Product changes / disposition of stock..."
           />
         </div>
 
-        <div className="p-3">
-          <label className="text-xs font-black uppercase text-gray-800 block mb-1">
-            Actions taken / Proposed on toolings of prior to modification (By CFT & Planning):
+        <div className="p-2">
+          <label className="font-bold text-[10px] uppercase block mb-1">
+            Actions taken / Proposed on toolings of prior to modification (By CFT & Planning) :
+            <span className="text-[9px] font-normal text-gray-600 ml-1">(P)</span>
           </label>
           <textarea
             rows="2"
             value={details.toolingActions}
             onChange={(e) => setDetails({ ...details, toolingActions: e.target.value })}
-            className="w-full p-2 border border-gray-300 rounded text-xs font-medium outline-none focus:border-[#ff9100]"
-            placeholder="Tooling rework / pattern modification plan..."
+            className="w-full p-1.5 border border-gray-300 text-xs font-medium outline-none bg-transparent"
+            placeholder="Actions on tooling / pattern modifications..."
           />
         </div>
 
-        <div className="p-3">
-          <label className="text-xs font-black uppercase text-gray-800 block mb-1">
-            Any other Remarks:
+        <div className="p-2">
+          <label className="font-bold text-[10px] uppercase block mb-1">
+            Any other Remarks :
+            <span className="text-[9px] font-normal text-gray-600 ml-1">(document & approval ones)</span>
           </label>
           <textarea
             rows="2"
             value={details.otherRemarks}
             onChange={(e) => setDetails({ ...details, otherRemarks: e.target.value })}
-            className="w-full p-2 border border-gray-300 rounded text-xs font-medium outline-none focus:border-[#ff9100]"
-            placeholder="CFT concluding remarks..."
+            className="w-full p-1.5 border border-gray-300 text-xs font-medium outline-none bg-transparent"
+            placeholder="Any other documentation / verification remarks..."
           />
         </div>
       </div>
 
-      {/* Informed To Checklist */}
-      <div className="border-2 border-gray-900 p-4 mb-6 bg-gray-50 flex flex-wrap items-center justify-between gap-4">
-        <span className="font-black text-xs uppercase tracking-wider text-gray-800">Informed to:</span>
+      {/* Informed To Section with Green Ticks */}
+      <div className="border-t-[1.5px] border-b-[1.5px] border-black p-2.5 bg-gray-50 flex flex-wrap items-center justify-between gap-4">
+        <span className="font-black text-[11px] uppercase tracking-wider text-black">Informed to :</span>
         {["customer", "marketing", "planning", "production", "qa", "qc"].map((dept) => (
-          <label key={dept} className="flex items-center gap-2 cursor-pointer font-bold text-xs uppercase">
-            <input
-              type="checkbox"
-              checked={details.informedTo[dept]}
-              onChange={(e) =>
-                setDetails({
-                  ...details,
-                  informedTo: { ...details.informedTo, [dept]: e.target.checked }
-                })
-              }
-              className="w-4 h-4 accent-[#ff9100]"
-            />
-            {dept}
-          </label>
+          <GreenTickBox
+            key={dept}
+            id={`inf_${dept}`}
+            label={dept.toUpperCase()}
+            checked={details.informedTo[dept]}
+            onChange={(e) =>
+              setDetails({
+                ...details,
+                informedTo: { ...details.informedTo, [dept]: e.target.checked }
+              })
+            }
+          />
         ))}
       </div>
 
-      {/* Signoff Core Team Grid */}
-      <div className="border-2 border-gray-900 p-4">
-        <h4 className="text-xs font-black uppercase tracking-wider text-gray-800 mb-3">Prepared and Signed By CFT Core Team</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-          {["Production", "Quality (QA)", "Marketing / Customer", "Plant Planning"].map((dept, idx) => (
-            <div key={idx} className="border border-gray-300 p-3 rounded bg-white">
-              <span className="font-black uppercase text-gray-700 block mb-2">{dept}</span>
-              <div className="space-y-1.5">
-                <input type="text" placeholder="Sign" className="w-full text-xs font-bold border-b border-gray-200 outline-none" />
-                <input type="text" placeholder="Name" className="w-full text-xs border-b border-gray-200 outline-none" />
-                <input type="text" placeholder="Title" className="w-full text-xs border-b border-gray-200 outline-none" />
+      {/* Prepared and Signed By Core Team Grid – 4 uniform physical signing columns */}
+      <div className="grid grid-cols-12 divide-x-[1.5px] divide-black text-xs border-b-[1.5px] border-black">
+        {[
+          { key: "cft", title: "CFT", role: "Cross-Functional Team" },
+          { key: "planning", title: "Planning", role: "Production Planning" },
+          { key: "qa", title: "QA", role: "Quality Assurance" },
+          { key: "qc", title: "QC", role: "Quality Control" }
+        ].map((col) => (
+          <div key={col.key} className="col-span-3 p-3 flex flex-col justify-between min-h-[115px] bg-white">
+            <div>
+              <span className="font-black text-xs uppercase tracking-wider text-center block text-black">
+                {col.title}
+              </span>
+              <span className="text-[8px] font-mono text-gray-400 text-center block border-b border-gray-300 pb-1">
+                {col.role}
+              </span>
+            </div>
+
+            <div className="space-y-2 mt-2">
+              <div>
+                <span className="text-[8px] uppercase font-bold text-gray-500 block">Signature :</span>
+                <input
+                  type="text"
+                  placeholder="Sign: _____________________"
+                  value={details.signOff[col.key]?.sign || ""}
+                  onChange={(e) =>
+                    setDetails({
+                      ...details,
+                      signOff: {
+                        ...details.signOff,
+                        [col.key]: { ...details.signOff[col.key], sign: e.target.value }
+                      }
+                    })
+                  }
+                  className="w-full text-xs font-bold border-b border-gray-400 focus:border-black outline-none pb-0.5 bg-transparent"
+                />
+              </div>
+
+              <div>
+                <span className="text-[8px] uppercase font-bold text-gray-500 block">Name :</span>
+                <input
+                  type="text"
+                  placeholder="Officer Name"
+                  value={details.signOff[col.key]?.name || ""}
+                  onChange={(e) =>
+                    setDetails({
+                      ...details,
+                      signOff: {
+                        ...details.signOff,
+                        [col.key]: { ...details.signOff[col.key], name: e.target.value }
+                      }
+                    })
+                  }
+                  className="w-full text-[10px] border-b border-gray-300 outline-none bg-transparent"
+                />
+              </div>
+
+              <div>
+                <span className="text-[8px] uppercase font-bold text-gray-500 block">Date :</span>
+                <input
+                  type="date"
+                  value={details.signOff[col.key]?.date || ""}
+                  onChange={(e) =>
+                    setDetails({
+                      ...details,
+                      signOff: {
+                        ...details.signOff,
+                        [col.key]: { ...details.signOff[col.key], date: e.target.value }
+                      }
+                    })
+                  }
+                  className="w-full text-[9px] text-gray-700 outline-none bg-transparent"
+                />
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Page indicator matching scanned sheet */}
+      <div className="flex justify-between items-center text-[10px] font-bold text-gray-800 p-1 border-t-[1.5px] border-black font-mono">
+        <span>QF / 07 / MRO – 03</span>
+        <span>Page No :- 04 of 04</span>
       </div>
     </FormWrapper>
   );

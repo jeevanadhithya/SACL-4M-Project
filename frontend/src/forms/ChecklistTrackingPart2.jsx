@@ -16,6 +16,12 @@ const initialItemsPart2 = [
 ];
 
 const ChecklistTrackingPart2 = () => {
+  const [meta, setMeta] = useState({
+    productCode: "",
+    customerName: "",
+    productDescription: "",
+    customerPartNo: ""
+  });
   const [items, setItems] = useState(initialItemsPart2);
   const [savedMsg, setSavedMsg] = useState("");
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -27,7 +33,7 @@ const ChecklistTrackingPart2 = () => {
   };
 
   const handleSave = async () => {
-    localStorage.setItem("saved_tracking_part2", JSON.stringify(items));
+    localStorage.setItem("saved_tracking_part2", JSON.stringify({ meta, items }));
 
     const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
     const token = localStorage.getItem("token");
@@ -41,8 +47,9 @@ const ChecklistTrackingPart2 = () => {
         },
         body: JSON.stringify({
           part: 2,
-          partNo: `CT2-${Date.now()}`,
-          formData: { items },
+          partNo: meta.customerPartNo || meta.productCode || `CT2-${Date.now()}`,
+          customer: meta.customerName,
+          formData: { meta, items },
         }),
       });
 
@@ -57,10 +64,11 @@ const ChecklistTrackingPart2 = () => {
   const handlePrint = async () => {
     setIsDownloadingPdf(true);
     const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+    const key = meta.customerPartNo || meta.productCode || "Tracking_Part2";
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${apiUrl}/api/change-tracking/report?part=2`, {
+      const res = await fetch(`${apiUrl}/api/change-tracking/report?partNo=${encodeURIComponent(key)}&part=2`, {
         method: "GET",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -70,7 +78,7 @@ const ChecklistTrackingPart2 = () => {
         const downloadUrl = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = downloadUrl;
-        link.download = "Checklist_Tracking_Part2.pdf";
+        link.download = `Checklist_Tracking_Page2_${key}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -89,7 +97,7 @@ const ChecklistTrackingPart2 = () => {
 
   return (
     <FormWrapper
-      title="CHECKLIST FOR MANAGING AND TRACKING CHANGE (PAGE 2 OF 4)"
+      title="CHECKLIST FOR MANAGING AND TRACKING CHANGE"
       qfNo="QF/07/MRO-03"
       revDate="01.12.2003"
       onSave={handleSave}
@@ -97,12 +105,62 @@ const ChecklistTrackingPart2 = () => {
       isDownloadingPdf={isDownloadingPdf}
     >
       {savedMsg && (
-        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold">
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold print:hidden">
           {savedMsg}
         </div>
       )}
 
+      {/* Header 2-row Product and Customer Details */}
+      <div className="border-b-[1.5px] border-black text-xs">
+        <div className="grid grid-cols-12 border-b-[1.5px] border-black">
+          <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">PRODUCT CODE :-</span>
+            <input
+              type="text"
+              value={meta.productCode}
+              onChange={(e) => setMeta({ ...meta, productCode: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-6 px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">CUSTOMER NAME :-</span>
+            <input
+              type="text"
+              value={meta.customerName}
+              onChange={(e) => setMeta({ ...meta, customerName: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-12">
+          <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">PRODUCT DESCRIPTION :-</span>
+            <input
+              type="text"
+              value={meta.productDescription}
+              onChange={(e) => setMeta({ ...meta, productDescription: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-6 px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">CUSTOMER PART NO :-</span>
+            <input
+              type="text"
+              value={meta.customerPartNo}
+              onChange={(e) => setMeta({ ...meta, customerPartNo: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+        </div>
+      </div>
+
       <ChecklistTrackingTable items={items} onUpdateItem={updateItem} />
+
+      <div className="flex justify-between items-center text-[10px] font-bold text-gray-800 p-1 border-t-[1.5px] border-black font-mono">
+        <span>QF / 07 / MRO – 03</span>
+        <span>Page No :- 02 of 04</span>
+      </div>
     </FormWrapper>
   );
 };

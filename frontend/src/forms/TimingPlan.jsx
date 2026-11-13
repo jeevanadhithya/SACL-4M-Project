@@ -1,33 +1,59 @@
 import React, { useState } from "react";
 import FormWrapper from "./FormWrapper";
+import GreenTickBox from "../components/GreenTickBox";
 
-const initialActivities = [
-  { phase: "I Phase", name: "Customer Enquiry", app: "AA, A", plan: ["P", "A"] },
-  { phase: "I Phase", name: "Receipt of 2D Drawing & 3D Model", app: "AA, A, B, C", plan: ["P", "A"] },
-  { phase: "I Phase", name: "Preliminary Assessment", app: "AA, A", plan: ["P", "A"] },
-  { phase: "I Phase", name: "Product Feasibility", app: "AA, A, B, C", plan: ["P", "A"] },
-  { phase: "I Phase", name: "Clarification required from customer", app: "AA, A, B, C", plan: ["P", "A"] },
-  { phase: "I Phase", name: "Cost Estimation", app: "AA, A, B, C", plan: ["P", "A"] },
-  { phase: "I Phase", name: "Quote submission", app: "AA, A, B, C", plan: ["P", "A"] },
-  { phase: "I Phase", name: "LOI / Purchase order", app: "AA, A, B, C", plan: ["P", "A"] },
-  { phase: "I Phase", name: "Team Feasibility Commitment", app: "AA, A", plan: ["P", "A"] },
-  { phase: "I Phase", name: "Contract review & Order acceptance", app: "AA, A, B, C", plan: ["P", "A"] },
+const APQP_ACTIVITIES = [
+  { id: 1, name: "Customer Enquiry", app: "AA, A" },
+  { id: 2, name: "Receipt of 2D Drawing & 3D Model", app: "AA, A, B, C" },
+  { id: 3, name: "Preliminary Assessment", app: "AA, A" },
+  { id: 4, name: "Product Feasibility", app: "AA, A, B, C" },
+  { id: 5, name: "Clarification required from customer (if any)", app: "AA, A, B, C" },
+  { id: 6, name: "Cost Estimation", app: "AA, A, B, C" },
+  { id: 7, name: "Quote submission", app: "AA, A, B, C" },
+  { id: 8, name: "LOI / Purchase order", app: "AA, A, B, C" },
+  { id: 9, name: "Team Feasibility Commitment", app: "AA, A" },
+  { id: 10, name: "Contract review & Order acceptance", app: "AA, A, B, C" },
 ];
+
+const WEEKS = ["I st Wk", "II nd Wk", "III rd Wk", "IV th Wk"];
 
 const TimingPlan = () => {
   const [meta, setMeta] = useState({
-    type: "Process/Product Change",
+    typeAA: true,
+    typeA: false,
+    typeB: false,
+    typeC: false,
     projectName: "",
     partNo: "",
+    preparedDate: new Date().toISOString().split("T")[0],
+    lastRevDate: "",
+    rev: "05",
     customer: "",
     productName: "",
-    preparedDate: new Date().toISOString().split("T")[0],
-    rev: "01",
-    goNextPhase: "Yes"
+    pageNo: "Page 1 of 15",
+    // Reviewed By
+    initialPlan: true,
+    actualStatus: false,
+    remainingActivities: false,
+    cftMembers: Array(6).fill(""),
+    remarks: "",
+    goNextPhase: "Yes",
+    cftLeaderSign: "",
+    plantHeadSign: "",
   });
 
   const [savedMsg, setSavedMsg] = useState("");
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  const updateMeta = (field, value) => {
+    setMeta((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateCftMember = (idx, value) => {
+    const updated = [...meta.cftMembers];
+    updated[idx] = value;
+    setMeta({ ...meta, cftMembers: updated });
+  };
 
   const handleSave = async () => {
     localStorage.setItem("saved_timing_plan", JSON.stringify(meta));
@@ -94,137 +120,260 @@ const TimingPlan = () => {
 
   return (
     <FormWrapper
-      title="TIMING PLAN (APQP / CHANGE SCHEDULE)"
+      title="TIMING PLAN"
       qfNo="QF/01/MKT-08"
-      revDate="Rev.No: 05 dt 01.12.2024"
+      revDate="Rev.No: 05 dt: 01.12.2024"
       onSave={handleSave}
       onPrint={handlePrint}
       isDownloadingPdf={isDownloadingPdf}
     >
       {savedMsg && (
-        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold">
+        <div className="mb-3 p-3 bg-green-100 border border-green-500 text-green-800 rounded text-xs font-bold print:hidden">
           {savedMsg}
         </div>
       )}
 
-      {/* Plan Type Selector */}
-      <div className="flex gap-6 mb-4 p-3 bg-gray-50 border-2 border-gray-900 font-bold text-xs uppercase">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            name="planType"
-            value="New Product"
-            checked={meta.type === "New Product"}
-            onChange={(e) => setMeta({ ...meta, type: e.target.value })}
-            className="accent-[#ff9100]"
+      {/* Top Classification Checkboxes Row matching scanned image top right */}
+      <div className="border-b-[1.5px] border-black p-2 bg-gray-50 flex flex-wrap items-center justify-end gap-6 text-xs font-bold">
+        <div className="flex items-center gap-3">
+          <GreenTickBox
+            id="tp_aa"
+            label="AA"
+            size="sm"
+            checked={meta.typeAA}
+            onChange={(e) => updateMeta("typeAA", e.target.checked)}
           />
-          New Product
-        </label>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            name="planType"
-            value="Process/Product Change"
-            checked={meta.type === "Process/Product Change"}
-            onChange={(e) => setMeta({ ...meta, type: e.target.value })}
-            className="accent-[#ff9100]"
+          <GreenTickBox
+            id="tp_a"
+            label="A"
+            size="sm"
+            checked={meta.typeA}
+            onChange={(e) => updateMeta("typeA", e.target.checked)}
           />
-          Process / Product Change
-        </label>
-      </div>
-
-      {/* Meta Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 border-2 border-gray-900 mb-6 divide-y md:divide-y-0 md:divide-x-2 divide-gray-900">
-        <div className="p-2">
-          <span className="text-[10px] font-black uppercase text-gray-500 block">Project Name:</span>
-          <input
-            type="text"
-            value={meta.projectName}
-            onChange={(e) => setMeta({ ...meta, projectName: e.target.value })}
-            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100]"
-          />
+          <span className="text-[11px] font-black uppercase text-gray-800 ml-1">New Product</span>
         </div>
-        <div className="p-2">
-          <span className="text-[10px] font-black uppercase text-gray-500 block">Drg / Part No:</span>
-          <input
-            type="text"
-            value={meta.partNo}
-            onChange={(e) => setMeta({ ...meta, partNo: e.target.value })}
-            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100]"
+        <div className="h-4 w-px bg-black hidden sm:block"></div>
+        <div className="flex items-center gap-3">
+          <GreenTickBox
+            id="tp_b"
+            label="B"
+            size="sm"
+            checked={meta.typeB}
+            onChange={(e) => updateMeta("typeB", e.target.checked)}
           />
-        </div>
-        <div className="p-2">
-          <span className="text-[10px] font-black uppercase text-gray-500 block">Customer:</span>
-          <input
-            type="text"
-            value={meta.customer}
-            onChange={(e) => setMeta({ ...meta, customer: e.target.value })}
-            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100]"
+          <GreenTickBox
+            id="tp_c"
+            label="C"
+            size="sm"
+            checked={meta.typeC}
+            onChange={(e) => updateMeta("typeC", e.target.checked)}
           />
-        </div>
-        <div className="p-2">
-          <span className="text-[10px] font-black uppercase text-gray-500 block">Prepared Date:</span>
-          <input
-            type="date"
-            value={meta.preparedDate}
-            onChange={(e) => setMeta({ ...meta, preparedDate: e.target.value })}
-            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100]"
-          />
+          <span className="text-[11px] font-black uppercase text-gray-800 ml-1">Process/Product Change</span>
         </div>
       </div>
 
-      {/* Timeline Gantt / Matrix */}
-      <div className="overflow-x-auto mb-6">
-        <table className="w-full border-collapse border-2 border-gray-900 text-xs text-center min-w-[900px]">
-          <thead className="bg-gray-100 font-bold border-b-2 border-gray-900">
+      {/* Project & Part Details Grid */}
+      <div className="border-b-[1.5px] border-black text-xs">
+        <div className="grid grid-cols-12 border-b-[1.5px] border-black divide-x-[1.5px] divide-black">
+          <div className="col-span-12 sm:col-span-4 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Project Name:</span>
+            <input
+              type="text"
+              value={meta.projectName}
+              onChange={(e) => updateMeta("projectName", e.target.value)}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-12 sm:col-span-3 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Drg.No / Part No :</span>
+            <input
+              type="text"
+              value={meta.partNo}
+              onChange={(e) => updateMeta("partNo", e.target.value)}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-12 sm:col-span-3 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Prepared Date:</span>
+            <input
+              type="date"
+              value={meta.preparedDate}
+              onChange={(e) => updateMeta("preparedDate", e.target.value)}
+              className="w-full outline-none bg-transparent text-[10px]"
+            />
+          </div>
+          <div className="col-span-12 sm:col-span-2 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Rev:</span>
+            <input
+              type="text"
+              value={meta.rev}
+              onChange={(e) => updateMeta("rev", e.target.value)}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-12 divide-x-[1.5px] divide-black">
+          <div className="col-span-12 sm:col-span-4 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Customer:</span>
+            <input
+              type="text"
+              value={meta.customer}
+              onChange={(e) => updateMeta("customer", e.target.value)}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-12 sm:col-span-5 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Product Name:</span>
+            <input
+              type="text"
+              value={meta.productName}
+              onChange={(e) => updateMeta("productName", e.target.value)}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-12 sm:col-span-3 p-1.5 flex items-center justify-between">
+            <span className="font-bold uppercase text-[10px]">Page:</span>
+            <span className="font-mono font-bold text-gray-800 text-[10px]">{meta.pageNo}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Major Milestones Summary Table */}
+      <div className="overflow-x-auto border-b-[1.5px] border-black">
+        <table className="w-full border-collapse text-[10px] text-center min-w-[900px]">
+          <thead className="bg-gray-100 font-bold border-b-[1.5px] border-black text-black">
             <tr>
-              <th className="border-2 border-gray-900 p-2 w-20" rowSpan="2">APQP Phase</th>
-              <th className="border-2 border-gray-900 p-2 text-left w-64" rowSpan="2">Activity</th>
-              <th className="border-2 border-gray-900 p-2 w-24" rowSpan="2">Applicability</th>
-              <th className="border-2 border-gray-900 p-2 w-12" rowSpan="2">P/A</th>
-              <th className="border-2 border-gray-900 p-1" colSpan="4">Month 1</th>
-              <th className="border-2 border-gray-900 p-1" colSpan="4">Month 2</th>
-              <th className="border-2 border-gray-900 p-1" colSpan="4">Month 3</th>
-              <th className="border-2 border-gray-900 p-2 w-32" rowSpan="2">Remarks</th>
-            </tr>
-            <tr className="text-[10px]">
-              {Array(3).fill(["W1", "W2", "W3", "W4"]).flat().map((wk, i) => (
-                <th key={i} className="border border-gray-400 p-1 bg-gray-50">{wk}</th>
+              <th className="border-r-[1.5px] border-black p-1 text-left w-64" rowSpan="2">
+                Activity (Major milestones)
+              </th>
+              {[1, 2, 3, 4, 5, 6].map((m) => (
+                <th key={m} className="border-r-[1.5px] border-black p-0.5" colSpan="4">
+                  Month : {m}
+                </th>
               ))}
+              <th className="p-1 w-24" rowSpan="2">
+                Remarks
+              </th>
+            </tr>
+            <tr className="bg-gray-50 border-t border-black text-[8px]">
+              {[1, 2, 3, 4, 5, 6].map((m) =>
+                WEEKS.map((wk, wIdx) => (
+                  <th key={`${m}-${wIdx}`} className="border-r border-black p-0.5 w-7">
+                    {wk.split(" ")[0]}
+                  </th>
+                ))
+              )}
             </tr>
           </thead>
           <tbody>
-            {initialActivities.map((act, idx) => (
-              <React.Fragment key={idx}>
-                {/* Plan Row */}
-                <tr className="hover:bg-yellow-50/30">
-                  <td className="border-2 border-gray-900 p-2 font-black text-gray-700 bg-gray-50" rowSpan="2">
-                    {act.phase}
-                  </td>
-                  <td className="border-2 border-gray-900 p-2 text-left font-bold" rowSpan="2">
+            {[
+              "Customer Time line",
+              "Internal time line",
+              "Tier 2 (Sub supplier) Time line if applicable",
+            ].map((label, idx) => (
+              <tr key={idx} className="border-b border-black hover:bg-yellow-50/20">
+                <td className="border-r-[1.5px] border-black p-1.5 text-left font-bold text-black bg-white">
+                  {label}
+                </td>
+                {Array(24)
+                  .fill(0)
+                  .map((_, cIdx) => (
+                    <td key={cIdx} className="border-r border-black p-0.5">
+                      <input type="checkbox" className="w-3 h-3 accent-[#16A34A]" />
+                    </td>
+                  ))}
+                <td className="p-0.5">
+                  <input type="text" className="w-full text-[9px] outline-none text-center bg-transparent" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* APQP Phases Gantt Matrix */}
+      <div className="overflow-x-auto border-b-[1.5px] border-black">
+        <table className="w-full border-collapse text-[10px] text-center min-w-[900px]">
+          <thead className="bg-gray-100 font-bold border-b-[1.5px] border-black text-black">
+            <tr>
+              <th className="border-r-[1.5px] border-black p-1 w-16" rowSpan="2">
+                APQP Phases
+              </th>
+              <th className="border-r-[1.5px] border-black p-1 text-left w-56" rowSpan="2">
+                Activity
+              </th>
+              <th className="border-r-[1.5px] border-black p-1 w-20" rowSpan="2">
+                Applicability
+              </th>
+              <th className="border-r-[1.5px] border-black p-0.5 w-8" rowSpan="2">
+                P/A
+              </th>
+              {[1, 2, 3, 4, 5, 6].map((m) => (
+                <th key={m} className="border-r-[1.5px] border-black p-0.5" colSpan="4">
+                  Month : {m}
+                </th>
+              ))}
+              <th className="p-1 w-24" rowSpan="2">
+                Remarks
+              </th>
+            </tr>
+            <tr className="bg-gray-50 border-t border-black text-[8px]">
+              {[1, 2, 3, 4, 5, 6].map((m) =>
+                WEEKS.map((wk, wIdx) => (
+                  <th key={`${m}-${wIdx}`} className="border-r border-black p-0.5 w-7">
+                    {wk.split(" ")[0]}
+                  </th>
+                ))
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {APQP_ACTIVITIES.map((act, idx) => (
+              <React.Fragment key={act.id}>
+                {/* Plan (P) Row */}
+                <tr className="border-b border-gray-400 hover:bg-yellow-50/20">
+                  {idx === 0 && (
+                    <td
+                      className="border-r-[1.5px] border-black p-1 font-black text-black bg-white align-middle"
+                      rowSpan={APQP_ACTIVITIES.length * 2}
+                    >
+                      I Phase
+                    </td>
+                  )}
+                  <td className="border-r-[1.5px] border-black p-1 text-left font-bold text-black" rowSpan="2">
                     {act.name}
                   </td>
-                  <td className="border-2 border-gray-900 p-2 text-gray-600 font-mono" rowSpan="2">
+                  <td className="border-r-[1.5px] border-black p-1 font-mono text-[9px] text-gray-700" rowSpan="2">
                     {act.app}
                   </td>
-                  <td className="border border-gray-400 p-1 font-black bg-blue-50 text-blue-800">P</td>
-                  {Array(12).fill(0).map((_, wIdx) => (
-                    <td key={wIdx} className="border border-gray-300 p-0">
-                      <input type="checkbox" className="w-3.5 h-3.5 accent-blue-600" />
-                    </td>
-                  ))}
-                  <td className="border-2 border-gray-900 p-1" rowSpan="2">
-                    <input type="text" placeholder="Status" className="w-full text-[11px] outline-none" />
+                  <td className="border-r-[1.5px] border-black p-0.5 font-bold text-blue-700 bg-blue-50/50">
+                    P
+                  </td>
+                  {Array(24)
+                    .fill(0)
+                    .map((_, w) => (
+                      <td key={w} className="border-r border-gray-300 p-0.5">
+                        <input type="checkbox" className="w-3 h-3 accent-blue-600" />
+                      </td>
+                    ))}
+                  <td className="p-0.5 border-l border-black" rowSpan="2">
+                    <input type="text" placeholder="Remarks" className="w-full text-[9px] outline-none bg-transparent" />
                   </td>
                 </tr>
-                {/* Actual Row */}
-                <tr className="border-b-2 border-gray-900 hover:bg-yellow-50/30">
-                  <td className="border border-gray-400 p-1 font-black bg-green-50 text-green-800">A</td>
-                  {Array(12).fill(0).map((_, wIdx) => (
-                    <td key={wIdx} className="border border-gray-300 p-0">
-                      <input type="checkbox" className="w-3.5 h-3.5 accent-green-600" />
-                    </td>
-                  ))}
+
+                {/* Actual (A) Row */}
+                <tr className="border-b-[1.5px] border-black hover:bg-yellow-50/20">
+                  <td className="border-r-[1.5px] border-black p-0.5 font-bold text-green-700 bg-green-50/50">
+                    A
+                  </td>
+                  {Array(24)
+                    .fill(0)
+                    .map((_, w) => (
+                      <td key={w} className="border-r border-gray-300 p-0.5">
+                        <input type="checkbox" className="w-3 h-3 accent-[#16A34A]" />
+                      </td>
+                    ))}
                 </tr>
               </React.Fragment>
             ))}
@@ -232,35 +381,133 @@ const TimingPlan = () => {
         </table>
       </div>
 
-      {/* Sign-off & Next Phase */}
-      <div className="border-2 border-gray-900 p-4 bg-gray-50 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <span className="font-black text-xs uppercase tracking-wider text-gray-800">Go for next Phase:</span>
-          {["Yes", "No"].map((choice) => (
-            <label key={choice} className="flex items-center gap-1.5 font-bold text-xs uppercase cursor-pointer">
-              <input
-                type="radio"
-                name="nextPhase"
-                value={choice}
-                checked={meta.goNextPhase === choice}
-                onChange={(e) => setMeta({ ...meta, goNextPhase: e.target.value })}
-                className="w-4 h-4 accent-[#ff9100]"
-              />
-              {choice}
-            </label>
-          ))}
+      {/* REVIEWED BY Section */}
+      <div className="border-b-[1.5px] border-black p-2 bg-gray-50 flex flex-wrap items-center justify-between gap-4 text-xs font-bold">
+        <div className="flex items-center gap-6">
+          <span className="font-black uppercase text-[10px] tracking-wider text-black">REVIEWED BY :</span>
+          <GreenTickBox
+            id="rev_initial"
+            label="Initial Plan"
+            checked={meta.initialPlan}
+            onChange={(e) => updateMeta("initialPlan", e.target.checked)}
+          />
+          <GreenTickBox
+            id="rev_actual"
+            label="Actual status"
+            checked={meta.actualStatus}
+            onChange={(e) => updateMeta("actualStatus", e.target.checked)}
+          />
+          <GreenTickBox
+            id="rev_rem"
+            label="Plan for the remaining activities"
+            checked={meta.remainingActivities}
+            onChange={(e) => updateMeta("remainingActivities", e.target.checked)}
+          />
+        </div>
+        <div className="text-[10px] text-red-600 font-mono font-bold">
+          *** =&gt; Critical process, it will affect the customer milestone
+        </div>
+      </div>
+
+      {/* CFT Signatures and Plant Head Approval Grid – generous signing space */}
+      <div className="grid grid-cols-12 divide-x-[1.5px] divide-black text-xs">
+        {/* CFT Members 1-6 */}
+        <div className="col-span-12 sm:col-span-4 p-2.5 bg-white">
+          <span className="font-black uppercase text-[10px] tracking-wider block mb-1.5 text-gray-800">
+            CFT Members :
+          </span>
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex flex-col justify-between p-1 border border-gray-200 rounded min-h-[44px] bg-gray-50/40">
+                <span className="font-bold text-[9px] text-gray-700">{i + 1}. Member</span>
+                <input
+                  type="text"
+                  placeholder="Sign: ___________"
+                  value={meta.cftMembers[i]}
+                  onChange={(e) => updateCftMember(i, e.target.value)}
+                  className="w-full text-[9px] font-bold outline-none border-b border-gray-400 focus:border-black bg-transparent pb-0.5"
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="flex gap-6 text-xs">
+        {/* Remarks & Go Next Phase */}
+        <div className="col-span-12 sm:col-span-4 p-2.5 flex flex-col justify-between bg-white">
           <div>
-            <span className="text-[10px] font-bold text-gray-500 block">CFT Leader:</span>
-            <input type="text" placeholder="Approved / Sign" className="font-bold border-b border-gray-400 outline-none bg-transparent" />
+            <span className="font-black uppercase text-[10px] tracking-wider block mb-1 text-gray-800">Remarks :</span>
+            <textarea
+              rows="2"
+              value={meta.remarks}
+              onChange={(e) => updateMeta("remarks", e.target.value)}
+              className="w-full text-xs outline-none border border-gray-300 rounded p-1.5 bg-transparent resize-none focus:border-black"
+              placeholder="Milestone and feasibility remarks..."
+            />
           </div>
-          <div>
-            <span className="text-[10px] font-bold text-gray-500 block">Plant Head:</span>
-            <input type="text" placeholder="Approved / Sign" className="font-bold border-b border-gray-400 outline-none bg-transparent" />
+          <div className="mt-2 pt-2 border-t border-gray-200 flex items-center justify-between">
+            <span className="font-black uppercase text-[10px] text-black">Go for next Phase :</span>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-1 font-bold cursor-pointer text-xs">
+                <input
+                  type="radio"
+                  name="goPhase"
+                  value="Yes"
+                  checked={meta.goNextPhase === "Yes"}
+                  onChange={(e) => updateMeta("goNextPhase", e.target.value)}
+                  className="accent-[#16A34A] w-3.5 h-3.5"
+                />
+                Yes
+              </label>
+              <label className="flex items-center gap-1 font-bold cursor-pointer text-xs">
+                <input
+                  type="radio"
+                  name="goPhase"
+                  value="No"
+                  checked={meta.goNextPhase === "No"}
+                  onChange={(e) => updateMeta("goNextPhase", e.target.value)}
+                  className="accent-red-600 w-3.5 h-3.5"
+                />
+                No
+              </label>
+            </div>
           </div>
         </div>
+
+        {/* Signatures: CFT Leader & Plant Head */}
+        <div className="col-span-12 sm:col-span-4 p-2.5 flex flex-col justify-between divide-y divide-gray-200 bg-white">
+          <div className="pb-2 min-h-[55px] flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="font-black uppercase text-[10px] tracking-wider text-black">CFT Leader</span>
+              <span className="text-[8px] font-mono text-gray-400">Authorised Sign</span>
+            </div>
+            <input
+              type="text"
+              placeholder="Sign: __________________________"
+              value={meta.cftLeaderSign}
+              onChange={(e) => updateMeta("cftLeaderSign", e.target.value)}
+              className="w-full text-xs font-bold outline-none border-b border-gray-400 focus:border-black bg-transparent pb-0.5 mt-1"
+            />
+          </div>
+          <div className="pt-2 min-h-[55px] flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="font-black uppercase text-[10px] tracking-wider text-black">Plant Head</span>
+              <span className="text-[8px] font-mono text-gray-400">Final Approval</span>
+            </div>
+            <input
+              type="text"
+              placeholder="Sign: __________________________"
+              value={meta.plantHeadSign}
+              onChange={(e) => updateMeta("plantHeadSign", e.target.value)}
+              className="w-full text-xs font-bold outline-none border-b border-gray-400 focus:border-black bg-transparent pb-0.5 mt-1"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Footer line */}
+      <div className="flex justify-between items-center text-[10px] font-bold text-gray-800 p-1 border-t-[1.5px] border-black font-mono">
+        <span>QF / 01 / MKT – 08, Rev.No: 05 dt: 01.12.2024</span>
+        <span>Page 1 of 15</span>
       </div>
     </FormWrapper>
   );

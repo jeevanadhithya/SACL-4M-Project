@@ -109,22 +109,22 @@ export const generateProcessChangeRequisitionPDF = (formData) => {
 
   currentY = doc.lastAutoTable.finalY;
 
-  // 4M Classification Bar
-  const manCheck = formData.classification?.man ? '[X]' : '[ ]';
-  const machineCheck = formData.classification?.machine ? '[X]' : '[ ]';
-  const materialCheck = formData.classification?.material ? '[X]' : '[ ]';
-  const methodCheck = formData.classification?.method ? '[X]' : '[ ]';
+  // 4M Classification Bar with Green Ticks
+  const manChecked = !!formData.classification?.man;
+  const mcChecked = !!formData.classification?.machine;
+  const matChecked = !!formData.classification?.material;
+  const methChecked = !!formData.classification?.method;
 
   autoTable(doc, {
     startY: currentY,
     margin: { left: startX, right: 10 },
     body: [
       [
-        { content: 'CLASSIFICATION (4M):', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-        { content: `${manCheck} MAN` },
-        { content: `${machineCheck} MACHINE` },
-        { content: `${materialCheck} MATERIAL` },
-        { content: `${methodCheck} METHOD` },
+        { content: 'CLASSIFICATION (4M):', styles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: [0, 0, 0] } },
+        { content: manChecked ? '[✓] MAN' : '[ ] MAN', styles: { textColor: manChecked ? [22, 163, 74] : [80, 80, 80], fontStyle: manChecked ? 'bold' : 'normal' } },
+        { content: mcChecked ? '[✓] MACHINE' : '[ ] MACHINE', styles: { textColor: mcChecked ? [22, 163, 74] : [80, 80, 80], fontStyle: mcChecked ? 'bold' : 'normal' } },
+        { content: matChecked ? '[✓] MATERIAL' : '[ ] MATERIAL', styles: { textColor: matChecked ? [22, 163, 74] : [80, 80, 80], fontStyle: matChecked ? 'bold' : 'normal' } },
+        { content: methChecked ? '[✓] METHOD' : '[ ] METHOD', styles: { textColor: methChecked ? [22, 163, 74] : [80, 80, 80], fontStyle: methChecked ? 'bold' : 'normal' } },
       ],
     ],
     theme: 'grid',
@@ -135,9 +135,9 @@ export const generateProcessChangeRequisitionPDF = (formData) => {
 
   // Details of Change Required Table
   const particularRows = (formData.particularsRows || []).map((row, idx) => {
-    const fCheck = row.f ? '[X]' : '[ ]';
-    const mCheck = row.m ? '[X]' : '[ ]';
-    const femCheck = row.fem ? '[X]' : '[ ]';
+    const fCheck = row.f ? '[✓]' : '[ ]';
+    const mCheck = row.m ? '[✓]' : '[ ]';
+    const femCheck = row.fem ? '[✓]' : '[ ]';
     return [
       (idx + 1).toString(),
       row.particular || '-',
@@ -170,9 +170,9 @@ export const generateProcessChangeRequisitionPDF = (formData) => {
   currentY = doc.lastAutoTable.finalY;
 
   // Reason for Change Required
-  const prodCheck = formData.reason?.product ? '[X]' : '[ ]';
-  const procCheck = formData.reason?.process ? '[X]' : '[ ]';
-  const othCheck = formData.reason?.other ? '[X]' : '[ ]';
+  const prodCheck = formData.reason?.product ? '[✓]' : '[ ]';
+  const procCheck = formData.reason?.process ? '[✓]' : '[ ]';
+  const othCheck = formData.reason?.other ? '[✓]' : '[ ]';
 
   autoTable(doc, {
     startY: currentY,
@@ -226,8 +226,8 @@ export const generateProcessChangeRequisitionPDF = (formData) => {
   currentY = doc.lastAutoTable.finalY;
 
   // Internal Approval
-  const appCheck = formData.approval?.approved ? '[X] APPROVED' : '[ ] APPROVED';
-  const rejCheck = formData.approval?.rejected ? '[X] REJECTED' : '[ ] REJECTED';
+  const appCheck = formData.approval?.approved ? '[✓] APPROVED' : '[ ] APPROVED';
+  const rejCheck = formData.approval?.rejected ? '[✓] REJECTED' : '[ ] REJECTED';
 
   autoTable(doc, {
     startY: currentY,
@@ -247,8 +247,8 @@ export const generateProcessChangeRequisitionPDF = (formData) => {
   currentY = doc.lastAutoTable.finalY;
 
   // Customer Communication Detail
-  const sopCheck = formData.customerCommunication?.changeReflectionInSop ? '[X]' : '[ ]';
-  const fwdCheck = formData.customerCommunication?.nextForwarded ? '[X]' : '[ ]';
+  const sopCheck = formData.customerCommunication?.changeReflectionInSop ? '[✓]' : '[ ]';
+  const fwdCheck = formData.customerCommunication?.nextForwarded ? '[✓]' : '[ ]';
 
   autoTable(doc, {
     startY: currentY,

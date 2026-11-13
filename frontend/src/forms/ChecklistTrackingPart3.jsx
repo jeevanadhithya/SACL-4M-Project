@@ -8,15 +8,23 @@ const initialItemsPart3 = [
   { name: "Checking Aids / Gauges", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
   { name: "Production Trial Run", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
   { name: "PAP", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
-  { name: "Master List of: a) Drawings", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
-  { name: "Master List of: b) Engineering / Material Specification", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
-  { name: "Master List of: c) Process Flow Diagram", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
-  { name: "Master List of: d) Control Plan", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
-  { name: "Master List of: e) Work Instruction", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
-  { name: "Master List of: h) Process FMEA", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
+  { name: "Master List of: a) Formats", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
+  { name: "Master List of: b) Drawings", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
+  { name: "Master List of: c) Visual Aids", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
+  { name: "Master List of: d) Work Instruction", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
+  { name: "Master List of: e) Process Flow Diagram", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
+  { name: "Master List of: f) Control Plan", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
+  { name: "Master List of: g) Process FMEA", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
+  { name: "Master List of: h) Tooling, Jigs, Fixture, Pattern Drawings", affected: false, action: "", resp: "", reqdDate: "", actualDate: "", docNo: "", curRev: "", remarks: "" },
 ];
 
 const ChecklistTrackingPart3 = () => {
+  const [meta, setMeta] = useState({
+    productCode: "",
+    customerName: "",
+    productDescription: "",
+    customerPartNo: ""
+  });
   const [items, setItems] = useState(initialItemsPart3);
   const [savedMsg, setSavedMsg] = useState("");
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -28,7 +36,7 @@ const ChecklistTrackingPart3 = () => {
   };
 
   const handleSave = async () => {
-    localStorage.setItem("saved_tracking_part3", JSON.stringify(items));
+    localStorage.setItem("saved_tracking_part3", JSON.stringify({ meta, items }));
 
     const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
     const token = localStorage.getItem("token");
@@ -42,8 +50,9 @@ const ChecklistTrackingPart3 = () => {
         },
         body: JSON.stringify({
           part: 3,
-          partNo: `CT3-${Date.now()}`,
-          formData: { items },
+          partNo: meta.customerPartNo || meta.productCode || `CT3-${Date.now()}`,
+          customer: meta.customerName,
+          formData: { meta, items },
         }),
       });
 
@@ -58,10 +67,11 @@ const ChecklistTrackingPart3 = () => {
   const handlePrint = async () => {
     setIsDownloadingPdf(true);
     const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+    const key = meta.customerPartNo || meta.productCode || "Tracking_Part3";
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${apiUrl}/api/change-tracking/report?part=3`, {
+      const res = await fetch(`${apiUrl}/api/change-tracking/report?partNo=${encodeURIComponent(key)}&part=3`, {
         method: "GET",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -71,7 +81,7 @@ const ChecklistTrackingPart3 = () => {
         const downloadUrl = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = downloadUrl;
-        link.download = "Checklist_Tracking_Part3.pdf";
+        link.download = `Checklist_Tracking_Page3_${key}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -90,7 +100,7 @@ const ChecklistTrackingPart3 = () => {
 
   return (
     <FormWrapper
-      title="CHECKLIST FOR MANAGING AND TRACKING CHANGE (PAGE 3 OF 4)"
+      title="CHECKLIST FOR MANAGING AND TRACKING CHANGE"
       qfNo="QF/07/MRO-03"
       revDate="01.12.2003"
       onSave={handleSave}
@@ -98,12 +108,62 @@ const ChecklistTrackingPart3 = () => {
       isDownloadingPdf={isDownloadingPdf}
     >
       {savedMsg && (
-        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold">
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold print:hidden">
           {savedMsg}
         </div>
       )}
 
+      {/* Header 2-row Product and Customer Details */}
+      <div className="border-b-[1.5px] border-black text-xs">
+        <div className="grid grid-cols-12 border-b-[1.5px] border-black">
+          <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">PRODUCT CODE :-</span>
+            <input
+              type="text"
+              value={meta.productCode}
+              onChange={(e) => setMeta({ ...meta, productCode: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-6 px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">CUSTOMER NAME :-</span>
+            <input
+              type="text"
+              value={meta.customerName}
+              onChange={(e) => setMeta({ ...meta, customerName: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-12">
+          <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">PRODUCT DESCRIPTION :-</span>
+            <input
+              type="text"
+              value={meta.productDescription}
+              onChange={(e) => setMeta({ ...meta, productDescription: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-6 px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">CUSTOMER PART NO :-</span>
+            <input
+              type="text"
+              value={meta.customerPartNo}
+              onChange={(e) => setMeta({ ...meta, customerPartNo: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+        </div>
+      </div>
+
       <ChecklistTrackingTable items={items} onUpdateItem={updateItem} />
+
+      <div className="flex justify-between items-center text-[10px] font-bold text-gray-800 p-1 border-t-[1.5px] border-black font-mono">
+        <span>QF / 07 / MRO – 03</span>
+        <span>Page No :- 03 of 04</span>
+      </div>
     </FormWrapper>
   );
 };

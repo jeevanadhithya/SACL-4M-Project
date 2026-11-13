@@ -19,18 +19,49 @@ const config = {
   },
 };
 
-const poolPromise = new sql.ConnectionPool(config)
-  .connect()
-  .then((pool) => {
-    console.log("✅ MSSQL Database Connected Successfully to", config.database, "on", config.server);
-    return pool;
-  })
-  .catch((err) => {
-    console.error("❌ MSSQL Connection Failed! Make sure SQL Server is running:", err.message);
-    return null;
-  });
+let activePool = null;
+let connectingPromise = null;
+
+async function getPool() {
+  if (activePool && activePool.connected) {
+    return activePool;
+  }
+  if (connectingPromise) {
+    return connectingPromise;
+  }
+
+  connectingPromise = new sql.ConnectionPool(config)
+    .connect()
+    .then((pool) => {
+      console.log("✅ MSSQL Database Connected Successfully to", config.database, "on", config.server);
+      activePool = pool;
+      connectingPromise = null;
+      return pool;
+    })
+    .catch((err) => {
+      console.error("❌ MSSQL Connection Attempt Failed:", err.message);
+      connectingPromise = null;
+      return null;
+    });
+
+  return connectingPromise;
+}
+
+// Initial connection attempt on startup
+getPool();
+
+// Thenable object that transparently satisfies `await poolPromise` across all controllers
+const poolPromise = {
+  then(resolve, reject) {
+    return getPool().then(resolve, reject);
+  },
+  catch(reject) {
+    return getPool().catch(reject);
+  },
+};
 
 module.exports = {
   sql,
   poolPromise,
+  getPool,
 };

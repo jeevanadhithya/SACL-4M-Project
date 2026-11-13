@@ -151,4 +151,61 @@ router.get("/users", verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * PUT /api/auth/users/:id
+ * Admin updates a user's role or department
+ */
+router.put("/users/:id", verifyToken, requireRole("admin"), async (req, res) => {
+  const { id } = req.params;
+  const { username, role, employeeId, department } = req.body;
+
+  try {
+    const pool = await poolPromise;
+    if (!pool) return res.status(503).json({ error: "Database connection unavailable." });
+
+    const request = pool.request();
+    request.input("id", sql.Int, parseInt(id, 10));
+    request.input("username", sql.VarChar, (username || "").trim());
+    request.input("role", sql.VarChar, (role || "operator").trim().toLowerCase());
+    request.input("employeeId", sql.VarChar, (employeeId || "").trim());
+    request.input("department", sql.VarChar, (department || "General").trim());
+
+    await request.query(`
+      UPDATE Users
+      SET username = @username,
+          role = @role,
+          employeeId = @employeeId,
+          department = @department
+      WHERE id = @id
+    `);
+
+    return res.status(200).json({ message: "User updated successfully!" });
+  } catch (error) {
+    console.error("Update User Error:", error);
+    return res.status(500).json({ error: "Failed to update user." });
+  }
+});
+
+/**
+ * DELETE /api/auth/users/:id
+ * Admin deletes a user
+ */
+router.delete("/users/:id", verifyToken, requireRole("admin"), async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const pool = await poolPromise;
+    if (!pool) return res.status(503).json({ error: "Database connection unavailable." });
+
+    const request = pool.request();
+    request.input("id", sql.Int, parseInt(id, 10));
+    await request.query("DELETE FROM Users WHERE id = @id");
+
+    return res.status(200).json({ message: "User deleted successfully!" });
+  } catch (error) {
+    console.error("Delete User Error:", error);
+    return res.status(500).json({ error: "Failed to delete user." });
+  }
+});
+
 module.exports = router;

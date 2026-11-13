@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import FormWrapper from "./FormWrapper";
+import GreenTickBox from "../components/GreenTickBox";
 import { generateRiskAnalysisPDF } from "../utils/pdfGenerators";
 
 const CATEGORY_GROUPS = [
@@ -32,6 +33,16 @@ const CATEGORY_GROUPS = [
   { category: "Delivery", points: ["Delivery of Modified Parts"] },
 ];
 
+const STANDARD_REMARKS = [
+  "-- Select Remark --",
+  "Process parameter monitored & recorded",
+  "Work instructions & visual aids displayed",
+  "Gauge R&R and calibration confirmed",
+  "Tool wear & life tracking established",
+  "Trial batch 100% inspection performed",
+  "SOP revised and operators trained",
+];
+
 const createInitialRows = () =>
   CATEGORY_GROUPS.flatMap((group) =>
     group.points.map((point, index) => ({
@@ -52,15 +63,18 @@ const RiskAnalysisCheckSheet = () => {
     partName: "",
     customer: "",
     partNo: "",
-    date: "",
-    conclusion: "",
-    overallRisk: "",
-    conclusionNotes: "",
+    date: new Date().toISOString().split("T")[0],
+    conclusionAcceptable: true,
+    conclusionNotAcceptable: false,
+    overallRiskH: false,
+    overallRiskL: true,
+    overallRiskM: false,
   });
 
   const [rows, setRows] = useState(createInitialRows);
   const [signatures, setSignatures] = useState(Array(6).fill(""));
   const [savedMsg, setSavedMsg] = useState("");
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   const updateMeta = (field, value) => {
     setMeta((prev) => ({ ...prev, [field]: value }));
@@ -77,8 +91,6 @@ const RiskAnalysisCheckSheet = () => {
       prev.map((signature, i) => (i === index ? value : signature))
     );
   };
-
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   const handleSave = async () => {
     localStorage.setItem(
@@ -97,7 +109,7 @@ const RiskAnalysisCheckSheet = () => {
           Authorization: token ? `Bearer ${token}` : "",
         },
         body: JSON.stringify({
-          recordKey: meta.partNo || meta.date || `RA-${Date.now()}`,
+          recordKey: meta.partNo || meta.partName || `RA-${Date.now()}`,
           partName: meta.partName,
           customer: meta.customer,
           formData: { meta, rows, signatures },
@@ -105,21 +117,21 @@ const RiskAnalysisCheckSheet = () => {
       });
 
       if (!response.ok) throw new Error("Server save failed");
-      setSavedMsg("Risk analysis check sheet saved successfully to database!");
+      setSavedMsg("Risk Analysis Check Sheet saved successfully to database!");
     } catch (err) {
       setSavedMsg("Saved locally in browser storage (Backend server offline).");
     }
-    window.setTimeout(() => setSavedMsg(""), 3500);
+    setTimeout(() => setSavedMsg(""), 3500);
   };
 
   const handlePrint = async () => {
     setIsDownloadingPdf(true);
     const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
-    const key = meta.partNo || meta.date || "RA-Sheet";
+    const key = meta.partNo || meta.partName || "Risk_Analysis";
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${apiUrl}/api/risk-analysis/report?recordKey=${encodeURIComponent(key)}`, {
+      const res = await fetch(`${apiUrl}/api/risk-analysis/report?partNo=${encodeURIComponent(key)}`, {
         method: "GET",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -141,8 +153,14 @@ const RiskAnalysisCheckSheet = () => {
       throw new Error("Backend stream responded with status " + res.status);
     } catch (backendErr) {
       generateRiskAnalysisPDF({
-        ...meta,
-        riskRows: rows.map((r) => ({
+        partName: meta.partName,
+        customer: meta.customer,
+        partNo: meta.partNo,
+        date: meta.date,
+        conclusion: meta.conclusionAcceptable ? "Acceptable" : "Not Acceptable",
+        overallRiskLevel: meta.overallRiskH ? "H" : meta.overallRiskM ? "M" : "L",
+        signatures,
+        rows: rows.map((r) => ({
           category: r.category,
           riskPoint: r.point,
           controlMethod: r.control,
@@ -161,14 +179,6 @@ const RiskAnalysisCheckSheet = () => {
     }
   };
 
-  // eslint-disable-next-line no-unused-vars
-  const riskColor = (risk) => {
-    if (risk === "HIGH") return "bg-[#F9E9EB] text-[#7F1D1D]";
-    if (risk === "MEDIUM") return "bg-[#FFF8E7] text-[#F59E0B]";
-    if (risk === "LOW") return "bg-[#E8F5EF] text-[#14532D]";
-    return "bg-[#F8F9FA] text-[#6B7280]";
-  };
-
   return (
     <FormWrapper
       title="RISK ANALYSIS CHECK SHEET"
@@ -184,237 +194,259 @@ const RiskAnalysisCheckSheet = () => {
         </div>
       )}
 
-      <div className="w-full border-2 border-[#050B12] bg-white text-[#111827]">
-        {/* Form title and company header */}
-        <div className="grid grid-cols-12 border-b-2 border-[#050B12]">
-          <div className="col-span-12 flex min-h-[76px] items-center border-b-2 border-[#050B12] px-4 py-3 sm:col-span-4 sm:border-b-0 sm:border-r-2">
-            <div className="text-sm font-bold uppercase leading-tight">
-              SAKTHI
-              <br />
-              AUTO COMPONENT
-              <br />
-              LIMITED
-            </div>
-          </div>
-          <div className="col-span-12 flex min-h-[76px] items-center justify-center bg-[#F8F9FA] px-2 py-3 text-center sm:col-span-8">
-            <h2 className="text-base font-bold uppercase tracking-wide sm:text-xl">
-              RISK ANALYSIS CHECK SHEET
-            </h2>
-          </div>
-        </div>
-
-        {/* Part and customer details, matching the two-line paper header */}
-        <div className="grid grid-cols-12 border-b-2 border-[#050B12] text-xs">
-          <label className="col-span-12 flex min-h-[37px] items-center gap-2 border-b border-[#D1D5DB] px-3 py-1 sm:col-span-6 sm:border-b-0 sm:border-r sm:border-r-[#050B12]">
-            <span className="min-w-[75px] font-semibold">PART NAME :</span>
+      {/* Part & Customer Details Grid – 2 lines matching scanned sheet */}
+      <div className="border-b-[1.5px] border-black text-xs">
+        <div className="grid grid-cols-12 border-b-[1.5px] border-black">
+          <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">PART NAME :</span>
             <input
               value={meta.partName}
               onChange={(e) => updateMeta("partName", e.target.value)}
-              className="min-w-0 flex-1 bg-transparent px-1 py-1 text-sm outline-none focus:border-b focus:border-[#FF9800]"
+              className="w-full font-bold outline-none bg-transparent"
             />
-          </label>
-          <label className="col-span-12 flex min-h-[37px] items-center gap-2 border-b border-[#D1D5DB] px-3 py-1 sm:col-span-6 sm:border-b-0">
-            <span className="min-w-[75px] font-semibold">CUSTOMER :</span>
+          </div>
+          <div className="col-span-6 px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">CUSTOMER :</span>
             <input
               value={meta.customer}
               onChange={(e) => updateMeta("customer", e.target.value)}
-              className="min-w-0 flex-1 bg-transparent px-1 py-1 text-sm outline-none focus:border-b focus:border-[#FF9800]"
+              className="w-full font-bold outline-none bg-transparent"
             />
-          </label>
-          <label className="col-span-12 flex min-h-[37px] items-center gap-2 border-b border-[#D1D5DB] px-3 py-1 sm:col-span-6 sm:border-b-0 sm:border-r sm:border-r-[#050B12]">
-            <span className="min-w-[75px] font-semibold">PART NO. :</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-12">
+          <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">PART NO. :</span>
             <input
               value={meta.partNo}
               onChange={(e) => updateMeta("partNo", e.target.value)}
-              className="min-w-0 flex-1 bg-transparent px-1 py-1 text-sm outline-none focus:border-b focus:border-[#FF9800]"
+              className="w-full font-bold outline-none bg-transparent"
             />
-          </label>
-          <label className="col-span-12 flex min-h-[37px] items-center gap-2 px-3 py-1 sm:col-span-6">
-            <span className="min-w-[75px] font-semibold">DATE :</span>
+          </div>
+          <div className="col-span-6 px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">DATE :</span>
             <input
               type="date"
               value={meta.date}
               onChange={(e) => updateMeta("date", e.target.value)}
-              className="min-w-0 flex-1 bg-transparent px-1 py-1 text-sm outline-none focus:border-b focus:border-[#FF9800]"
+              className="w-full font-bold outline-none bg-transparent"
             />
-          </label>
+          </div>
         </div>
+      </div>
 
-        {/* Risk analysis table */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] table-fixed border-collapse text-[11px] sm:text-xs">
-            <colgroup>
-              <col style={{ width: "11%" }} />
-              <col style={{ width: "16%" }} />
-              <col style={{ width: "13%" }} />
-              <col style={{ width: "6.5%" }} />
-              <col style={{ width: "6.5%" }} />
-              <col style={{ width: "7%" }} />
-              <col style={{ width: "6.5%" }} />
-              <col style={{ width: "14%" }} />
-              <col style={{ width: "20.5%" }} />
-            </colgroup>
-            <thead className="bg-[#F8F9FA] text-[#111827]">
-              <tr className="h-[34px]">
-                <th rowSpan={2} className="border border-[#050B12] px-1 py-2 font-bold uppercase">
-                  CATEGORY
+      {/* Risk Analysis Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse border-b-[1.5px] border-black text-xs">
+          <thead className="bg-gray-100 font-bold border-b-[1.5px] border-black text-black">
+            <tr>
+              <th rowSpan={2} className="border-r-[1.5px] border-black px-2 py-1.5 uppercase w-20 text-center">
+                CATEGORY
+              </th>
+              <th rowSpan={2} className="border-r-[1.5px] border-black px-2 py-1.5 uppercase text-left w-48">
+                RISK POINTS
+              </th>
+              <th rowSpan={2} className="border-r-[1.5px] border-black px-2 py-1.5 uppercase text-left w-36">
+                CONTROL METHOD
+              </th>
+              <th colSpan={4} className="border-r-[1.5px] border-b border-black px-1 py-1 uppercase text-center">
+                RISK
+              </th>
+              <th className="border-r-[1.5px] border-b border-black px-2 py-1 uppercase text-center w-28">
+                EFFECT ON
+              </th>
+              <th rowSpan={2} className="px-2 py-1.5 uppercase text-left w-52">
+                ACTIONS
+              </th>
+            </tr>
+            <tr className="text-[10px] bg-gray-50 border-b-[1.5px] border-black">
+              {RISK_OPTIONS.map((opt) => (
+                <th key={opt} className="border-r border-black px-1 py-0.5 text-center w-10">
+                  {opt}
                 </th>
-                <th rowSpan={2} className="border border-[#050B12] px-1 py-2 font-bold uppercase">
-                  RISK POINTS
-                </th>
-                <th rowSpan={2} className="border border-[#050B12] px-1 py-2 font-bold uppercase">
-                  CONTROL<br />METHOD
-                </th>
-                <th colSpan={4} className="border border-[#050B12] px-1 py-1 font-bold uppercase">
-                  RISK
-                </th>
-                <th className="border border-[#050B12] px-1 py-1 font-bold uppercase">
-                  EFFECT ON
-                </th>
-                <th rowSpan={2} className="border border-[#050B12] px-1 py-2 font-bold uppercase">
-                  ACTIONS
-                </th>
-              </tr>
-              <tr className="h-[29px]">
-                {RISK_OPTIONS.map((option) => (
-                  <th key={option} className="border border-[#050B12] px-1 py-1 font-bold">
-                    {option}
-                  </th>
-                ))}
-                <th className="border border-[#050B12] px-1 py-1 font-bold">QCD</th>
-              </tr>
-            </thead>
+              ))}
+              <th className="border-r-[1.5px] border-black px-1 py-0.5 text-center">QCD</th>
+            </tr>
+          </thead>
 
-            <tbody>
-              {CATEGORY_GROUPS.map((group) => {
-                const groupRows = rows.filter((row) => row.category === group.category);
-                return groupRows.map((row, index) => (
-                  <tr key={row.id} className="h-[42px] hover:bg-[#F8F9FA]">
-                    {index === 0 && (
-                      <td
-                        rowSpan={group.points.length}
-                        className="border border-[#050B12] bg-[#F8F9FA] px-1 py-2 text-center font-semibold"
-                      >
-                        {group.category}
-                      </td>
-                    )}
-                    <td className="border border-[#050B12] px-1 py-2 font-medium">
-                      {row.point}
+          <tbody>
+            {CATEGORY_GROUPS.map((group) => {
+              const groupRows = rows.filter((r) => r.category === group.category);
+              return groupRows.map((row, index) => (
+                <tr key={row.id} className="border-b border-black hover:bg-yellow-50/30">
+                  {index === 0 && (
+                    <td
+                      rowSpan={group.points.length}
+                      className="border-r-[1.5px] border-black px-1 py-2 text-center font-bold text-black bg-white align-middle"
+                    >
+                      {group.category}
                     </td>
-                    <td className="border border-[#050B12] p-1">
-                      <input
-                        value={row.control}
-                        onChange={(e) => updateRow(row.id, "control", e.target.value)}
-                        aria-label={`${row.point} control method`}
-                        className="h-full min-h-[30px] w-full bg-transparent px-1 text-[11px] outline-none focus:ring-1 focus:ring-inset focus:ring-[#FF9800]"
-                      />
-                    </td>
-
-                    {RISK_OPTIONS.map((option) => (
-                      <td key={option} className="border border-[#050B12] p-1 text-center">
-                        <input
-                          type="radio"
-                          name={`risk-${row.id}`}
-                          value={option}
-                          checked={row.risk === option}
-                          onChange={() => updateRow(row.id, "risk", option)}
-                          aria-label={`${row.point}: ${option}`}
-                          className="h-3.5 w-3.5 cursor-pointer accent-[#FF9800]"
+                  )}
+                  <td className="border-r-[1.5px] border-black px-2 py-1 text-black font-medium">
+                    {row.point}
+                  </td>
+                  <td className="border-r-[1.5px] border-black p-1">
+                    <input
+                      type="text"
+                      value={row.control}
+                      onChange={(e) => updateRow(row.id, "control", e.target.value)}
+                      className="w-full text-xs outline-none bg-transparent"
+                    />
+                  </td>
+                  {RISK_OPTIONS.map((opt) => (
+                    <td key={opt} className="border-r border-black p-1 text-center bg-white">
+                      <div className="flex justify-center">
+                        <GreenTickBox
+                          id={`risk_${row.id}_${opt}`}
+                          size="sm"
+                          checked={row.risk === opt}
+                          onChange={() => updateRow(row.id, "risk", opt)}
                         />
-                      </td>
-                    ))}
-
-                    <td className="border border-[#050B12] p-1">
-                      <input
-                        value={row.qcd}
-                        onChange={(e) => updateRow(row.id, "qcd", e.target.value)}
-                        aria-label={`${row.point} effect on QCD`}
-                        className="h-full min-h-[30px] w-full bg-transparent px-1 text-[11px] outline-none focus:ring-1 focus:ring-inset focus:ring-[#FF9800]"
-                      />
+                      </div>
                     </td>
-                    <td className="border border-[#050B12] p-1">
+                  ))}
+                  <td className="border-r-[1.5px] border-black p-1 text-center">
+                    <input
+                      type="text"
+                      value={row.qcd}
+                      onChange={(e) => updateRow(row.id, "qcd", e.target.value)}
+                      className="w-full text-xs text-center outline-none bg-transparent font-bold"
+                    />
+                  </td>
+                  <td className="p-1">
+                    <div className="flex flex-col gap-0.5">
+                      <select
+                        value={
+                          STANDARD_REMARKS.includes(row.actions)
+                            ? row.actions
+                            : row.actions
+                            ? "Custom"
+                            : "-- Select Remark --"
+                        }
+                        onChange={(e) => {
+                          if (e.target.value !== "Custom" && e.target.value !== "-- Select Remark --") {
+                            updateRow(row.id, "actions", e.target.value);
+                          }
+                        }}
+                        className="w-full text-[9px] p-0.5 bg-transparent border border-gray-300 rounded font-bold print:hidden"
+                      >
+                        {STANDARD_REMARKS.map((rem) => (
+                          <option key={rem} value={rem}>
+                            {rem}
+                          </option>
+                        ))}
+                        <option value="Custom">Custom Action...</option>
+                      </select>
                       <input
+                        type="text"
+                        placeholder="Action..."
                         value={row.actions}
                         onChange={(e) => updateRow(row.id, "actions", e.target.value)}
-                        aria-label={`${row.point} actions`}
-                        className="h-full min-h-[30px] w-full bg-transparent px-1 text-[11px] outline-none focus:ring-1 focus:ring-inset focus:ring-[#FF9800]"
+                        className="w-full text-xs outline-none bg-transparent font-medium"
                       />
-                    </td>
-                  </tr>
-                ));
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </td>
+                </tr>
+              ));
+            })}
+          </tbody>
+        </table>
+      </div>
 
-        {/* Conclusion writing area */}
-        <div className="min-h-[100px] border-t-2 border-[#050B12] px-2 py-2">
-          <label className="block text-xs font-semibold underline">Conclusion</label>
-          <textarea
-            value={meta.conclusionNotes}
-            onChange={(e) => updateMeta("conclusionNotes", e.target.value)}
-            className="mt-1 min-h-[72px] w-full resize-y bg-transparent px-1 py-1 text-sm outline-none focus:ring-1 focus:ring-[#FF9800]"
-            aria-label="Conclusion details"
+      {/* CONCLUSION Section – exact scanned layout */}
+      <div className="grid grid-cols-12 border-b-[1.5px] border-black min-h-[46px]">
+        <div className="col-span-12 sm:col-span-6 border-b-[1.5px] sm:border-b-0 sm:border-r-[1.5px] border-black p-2 flex items-center gap-6">
+          <span className="font-black uppercase text-[10px] tracking-wider whitespace-nowrap">Conclusion :</span>
+          <GreenTickBox
+            id="ra_acceptable"
+            label="Acceptable"
+            checked={meta.conclusionAcceptable}
+            onChange={(e) =>
+              setMeta({ ...meta, conclusionAcceptable: e.target.checked, conclusionNotAcceptable: false })
+            }
+          />
+          <GreenTickBox
+            id="ra_not_acceptable"
+            label="Not Acceptable"
+            checked={meta.conclusionNotAcceptable}
+            onChange={(e) =>
+              setMeta({ ...meta, conclusionNotAcceptable: e.target.checked, conclusionAcceptable: false })
+            }
           />
         </div>
 
-        {/* Acceptability and overall risk level */}
-        <div className="grid grid-cols-12 border-y-2 border-[#050B12]">
-          <div className="col-span-12 flex flex-wrap items-center gap-x-5 gap-y-3 border-b-2 border-[#050B12] px-3 py-3 sm:col-span-5 sm:border-b-0 sm:border-r-2">
-            {["Acceptable", "Not Acceptable"].map((option) => (
-              <label key={option} className="flex cursor-pointer items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={meta.conclusion === option}
-                  onChange={() =>
-                    updateMeta("conclusion", meta.conclusion === option ? "" : option)
-                  }
-                  className="h-5 w-5 accent-[#FF9800]"
-                />
-                <span>{option}</span>
-              </label>
-            ))}
-          </div>
-
-          <div className="col-span-12 flex flex-wrap items-center justify-center gap-3 px-3 py-3 sm:col-span-7 sm:justify-start">
-            <span className="text-xs font-bold">Overall Risk level -</span>
-            <div className="flex border-2 border-[#050B12]">
-              {["H", "L", "M"].map((level) => (
-                <button
-                  key={level}
-                  type="button"
-                  onClick={() =>
-                    updateMeta("overallRisk", meta.overallRisk === level ? "" : level)
-                  }
-                  className={`h-8 min-w-[48px] border-r border-[#050B12] px-3 text-xs font-bold last:border-r-0 transition-colors ${
-                    meta.overallRisk === level
-                      ? "bg-[#FF9800] text-[#050B12]"
-                      : "bg-white text-[#111827] hover:bg-[#FFF8E7]"
-                  }`}
-                >
-                  {level}
-                </button>
-              ))}
-            </div>
+        <div className="col-span-12 sm:col-span-6 p-2 flex items-center justify-start sm:justify-end gap-4">
+          <span className="font-black uppercase text-[10px] tracking-wider whitespace-nowrap">Overall Risk level -</span>
+          <div className="flex items-center gap-3">
+            <GreenTickBox
+              id="risk_h"
+              label="H"
+              size="sm"
+              checked={meta.overallRiskH}
+              onChange={() => setMeta({ ...meta, overallRiskH: true, overallRiskL: false, overallRiskM: false })}
+            />
+            <GreenTickBox
+              id="risk_l"
+              label="L"
+              size="sm"
+              checked={meta.overallRiskL}
+              onChange={() => setMeta({ ...meta, overallRiskH: false, overallRiskL: true, overallRiskM: false })}
+            />
+            <GreenTickBox
+              id="risk_m"
+              label="M"
+              size="sm"
+              checked={meta.overallRiskM}
+              onChange={() => setMeta({ ...meta, overallRiskH: false, overallRiskL: false, overallRiskM: true })}
+            />
           </div>
         </div>
+      </div>
 
-        {/* CFT member signature section */}
-        <div className="grid grid-cols-12">
-          <div className="col-span-12 border-b border-[#050B12] px-3 py-2 text-xs font-medium sm:col-span-4 sm:border-b-0 sm:border-r">
-            CFT Members Signature :
+      {/* CFT MEMBERS SIGNATURE Grid (1 to 6) – uniform physical signing space */}
+      <div className="grid grid-cols-12 text-xs">
+        <div className="col-span-12 sm:col-span-3 border-b-[1.5px] sm:border-b-0 sm:border-r-[1.5px] border-black p-3 flex flex-col justify-center bg-gray-50/50">
+          <span className="font-black uppercase text-[10px] tracking-wider leading-tight">CFT Members Signature :</span>
+          <span className="text-[9px] text-gray-500 font-mono mt-1">Cross-Functional Team Sign-off</span>
+        </div>
+        <div className="col-span-12 sm:col-span-9 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x-[1.5px] divide-black">
+          <div className="flex flex-col divide-y divide-black">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="p-2 min-h-[48px] flex flex-col justify-between bg-white">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[10px] text-gray-800">CFT Member {i + 1}</span>
+                  <span className="text-[8px] font-mono text-gray-400">Signature</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="text"
+                    placeholder="Sign: __________________________"
+                    value={signatures[i]}
+                    onChange={(e) => updateSignature(i, e.target.value)}
+                    className="w-full text-xs font-bold border-b border-gray-400 focus:border-black outline-none bg-transparent pb-0.5"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="col-span-12 grid grid-cols-2 gap-x-6 gap-y-2 px-3 py-2 sm:col-span-8">
-            {[1, 2, 3, 4, 5, 6].map((number) => (
-              <label key={number} className="flex min-h-[30px] items-center gap-2 text-xs">
-                <span className="w-5">{number})</span>
-                <input
-                  value={signatures[number - 1]}
-                  onChange={(e) => updateSignature(number - 1, e.target.value)}
-                  aria-label={`CFT member ${number} signature`}
-                  className="min-w-0 flex-1 border-b border-transparent bg-transparent px-1 py-1 outline-none focus:border-[#FF9800]"
-                />
-              </label>
+          <div className="flex flex-col divide-y divide-black">
+            {[3, 4, 5].map((i) => (
+              <div key={i} className="p-2 min-h-[48px] flex flex-col justify-between bg-white">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[10px] text-gray-800">CFT Member {i + 1}</span>
+                  <span className="text-[8px] font-mono text-gray-400">Signature</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="text"
+                    placeholder="Sign: __________________________"
+                    value={signatures[i]}
+                    onChange={(e) => updateSignature(i, e.target.value)}
+                    className="w-full text-xs font-bold border-b border-gray-400 focus:border-black outline-none bg-transparent pb-0.5"
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </div>

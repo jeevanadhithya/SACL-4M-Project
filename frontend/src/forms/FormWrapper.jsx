@@ -60,21 +60,24 @@ const FormWrapper = ({ title, qfNo, revDate, children, onSave, onPrint, isSaving
           </div>
         </div>
 
-        {/* Paper Canvas */}
-        <div id="printable-area" className="printable-form w-full bg-white rounded-xl shadow-2xl p-6 sm:p-10 border-4 border-gray-100 text-gray-900 overflow-x-auto print:rounded-none print:shadow-none print:border-none print:p-0">
+        {/* Paper Canvas – single unified continuous border */}
+        <div id="printable-area" className="printable-form w-full max-w-[1100px] bg-white rounded-sm shadow-2xl p-6 sm:p-10 border-[1.5px] border-black text-black overflow-x-auto print:rounded-none print:shadow-none print:border-none print:p-0 print:max-w-full">
           
-          {/* Official Document Masthead – uses shared FormHeader */}
-          <div className="border-2 border-gray-900 mb-8">
+          {/* Continuous outer box around header and contents */}
+          <div className="w-full border-[1.5px] border-black text-black text-xs font-sans">
+            {/* Official Document Masthead */}
             <FormHeader title={title} qfNo={qfNo} revDate={revDate} />
+
+            {/* Form Body Content */}
+            <div className="w-full">
+              {children}
+            </div>
           </div>
 
-          {/* Form Content */}
-          {children}
-
-          {/* Footer Quality Note */}
-          <div className="mt-8 pt-4 border-t-2 border-gray-200 flex flex-col sm:flex-row justify-between items-center text-xs text-gray-500 font-bold uppercase tracking-wider print:mt-4 print:pt-2">
-            <span>Sakthi Auto Quality Management System</span>
-            <span>Confidential & Proprietary</span>
+          {/* Footer Quality Document Reference */}
+          <div className="mt-2 flex justify-between items-center text-[10px] font-bold text-gray-800 px-1 font-mono">
+            <span>{qfNo ? `${qfNo}${revDate ? `, ${revDate}` : ""}` : "Sakthi Auto Quality Management System"}</span>
+            <span>CONFIDENTIAL & PROPRIETARY</span>
           </div>
 
         </div>

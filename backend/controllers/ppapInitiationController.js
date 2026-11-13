@@ -2,6 +2,7 @@ const { sql, poolPromise } = require("../db");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const { getLogoPath, drawCheckbox, drawFormHeader } = require("../utils/pdfTheme");
 
 exports.getRecord = async (req, res) => {
   const { recordKey, partNameNumber } = req.query;
@@ -86,22 +87,16 @@ exports.generateReport = async (req, res) => {
     const pageWidth = doc.page.width - 56;
     let currentY = 28;
 
-    doc.lineWidth(1).rect(startX, currentY, pageWidth, 55).stroke();
-    const logoPath = path.join(__dirname, "logo.jpg");
-    if (fs.existsSync(logoPath)) {
-      try { doc.image(logoPath, startX + 5, currentY + 6, { width: 45, height: 42 }); } catch (e) {}
-    }
-
-    doc.font("Helvetica-Bold").fontSize(13).text("SAKTHI AUTO COMPONENT LIMITED", startX + 60, currentY + 14, { width: 330, align: "center" });
-    doc.font("Helvetica-Bold").fontSize(10).text("PPAP INITIATION FORM CUM PRODUCTION REPORT", startX + 60, currentY + 32, { width: 330, align: "center" });
-
-    doc.lineWidth(0.5).rect(startX + 400, currentY, pageWidth - 400, 55).stroke();
-    doc.font("Helvetica").fontSize(7.5);
-    doc.text("Date: 20.08.2016", startX + 405, currentY + 15);
-    doc.text("Page No: 1 of 1", startX + 405, currentY + 28);
-    doc.font("Helvetica-Bold").text("QF/07/MRO-05", startX + 405, currentY + 40);
-
-    currentY += 55;
+    const headerH = drawFormHeader(doc, {
+      startX,
+      currentY,
+      pageWidth,
+      title: "PPAP INITIATION FORM CUM PRODUCTION REPORT",
+      qfNo: "QF/07/MRO-05",
+      docNo: "20.08.2016",
+      revDate: "Page 1 of 1",
+    });
+    currentY += headerH;
 
     // Meta Box
     const colW = pageWidth / 3;

@@ -77,7 +77,7 @@ const ChecklistTrackingPart1 = () => {
         const downloadUrl = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = downloadUrl;
-        link.download = `Checklist_Tracking_${key}.pdf`;
+        link.download = `Checklist_Tracking_Page1_${key}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -96,7 +96,7 @@ const ChecklistTrackingPart1 = () => {
 
   return (
     <FormWrapper
-      title="CHECKLIST FOR MANAGING AND TRACKING CHANGE (PAGE 1 OF 4)"
+      title="CHECKLIST FOR MANAGING AND TRACKING CHANGE"
       qfNo="QF/07/MRO-03"
       revDate="01.12.2003"
       onSave={handleSave}
@@ -104,52 +104,62 @@ const ChecklistTrackingPart1 = () => {
       isDownloadingPdf={isDownloadingPdf}
     >
       {savedMsg && (
-        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold">
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold print:hidden">
           {savedMsg}
         </div>
       )}
 
-      {/* Product & Customer Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-gray-900 mb-6 divide-y md:divide-y-0 md:divide-x-2 divide-gray-900 bg-gray-50/50">
-        <div className="p-3">
-          <label className="text-[10px] font-black uppercase text-gray-500 block">Product Code:</label>
-          <input
-            type="text"
-            value={meta.productCode}
-            onChange={(e) => setMeta({ ...meta, productCode: e.target.value })}
-            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100] bg-transparent"
-          />
+      {/* Header 2-row Product and Customer Details */}
+      <div className="border-b-[1.5px] border-black text-xs">
+        <div className="grid grid-cols-12 border-b-[1.5px] border-black">
+          <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">PRODUCT CODE :-</span>
+            <input
+              type="text"
+              value={meta.productCode}
+              onChange={(e) => setMeta({ ...meta, productCode: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-6 px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">CUSTOMER NAME :-</span>
+            <input
+              type="text"
+              value={meta.customerName}
+              onChange={(e) => setMeta({ ...meta, customerName: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
         </div>
-        <div className="p-3">
-          <label className="text-[10px] font-black uppercase text-gray-500 block">Customer Name:</label>
-          <input
-            type="text"
-            value={meta.customerName}
-            onChange={(e) => setMeta({ ...meta, customerName: e.target.value })}
-            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100] bg-transparent"
-          />
-        </div>
-        <div className="p-3">
-          <label className="text-[10px] font-black uppercase text-gray-500 block">Product Description:</label>
-          <input
-            type="text"
-            value={meta.productDescription}
-            onChange={(e) => setMeta({ ...meta, productDescription: e.target.value })}
-            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100] bg-transparent"
-          />
-        </div>
-        <div className="p-3">
-          <label className="text-[10px] font-black uppercase text-gray-500 block">Customer Part No:</label>
-          <input
-            type="text"
-            value={meta.customerPartNo}
-            onChange={(e) => setMeta({ ...meta, customerPartNo: e.target.value })}
-            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100] bg-transparent"
-          />
+
+        <div className="grid grid-cols-12">
+          <div className="col-span-6 border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">PRODUCT DESCRIPTION :-</span>
+            <input
+              type="text"
+              value={meta.productDescription}
+              onChange={(e) => setMeta({ ...meta, productDescription: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-6 px-2 py-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">CUSTOMER PART NO :-</span>
+            <input
+              type="text"
+              value={meta.customerPartNo}
+              onChange={(e) => setMeta({ ...meta, customerPartNo: e.target.value })}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
         </div>
       </div>
 
       <ChecklistTrackingTable items={items} onUpdateItem={updateItem} />
+
+      <div className="flex justify-between items-center text-[10px] font-bold text-gray-800 p-1 border-t-[1.5px] border-black font-mono">
+        <span>QF / 07 / MRO – 03</span>
+        <span>Page No :- 01 of 04</span>
+      </div>
     </FormWrapper>
   );
 };

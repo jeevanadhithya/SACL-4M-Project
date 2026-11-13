@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import FormWrapper from "./FormWrapper";
+import GreenTickBox from "../components/GreenTickBox";
+
+const PPAP_CORE_TEAMS = ["Production", "Quality", "Marketing / CFT"];
 
 const PpapInitiationForm = () => {
   const [meta, setMeta] = useState({
@@ -11,12 +14,12 @@ const PpapInitiationForm = () => {
     revNumber: "",
     reason: "",
     requestDate: "",
-    requestSign: ""
+    requestSign: "",
   });
 
   const [cftQuestions, setCftQuestions] = useState({
     firstProdRunDate: "",
-    qtyProduced: "300 Nos",
+    qtyProduced: "300 Nos / 1 Day",
     cycleTime: "",
     pfdNo: "",
     pfdRev: "",
@@ -31,14 +34,34 @@ const PpapInitiationForm = () => {
     pswApprovalDate: "",
     submissionRequired: true,
     submissionStatus: "Approved",
-    despatchAuthBy: ""
+    despatchAuthBy: "",
+    despatchAuthSign: "",
+    despatchAuthDate: "",
   });
+
+  const [coreTeamApproval, setCoreTeamApproval] = useState(
+    PPAP_CORE_TEAMS.reduce((acc, team) => {
+      acc[team] = { ok: true, notOk: false, sign: "", date: "" };
+      return acc;
+    }, {})
+  );
 
   const [savedMsg, setSavedMsg] = useState("");
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
+  const updateMeta = (field, value) => {
+    setMeta((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateCft = (field, value) => {
+    setCftQuestions((prev) => ({ ...prev, [field]: value }));
+  };
+
   const handleSave = async () => {
-    localStorage.setItem("saved_ppap_initiation", JSON.stringify({ meta, cftQuestions }));
+    localStorage.setItem(
+      "saved_ppap_initiation",
+      JSON.stringify({ meta, cftQuestions, coreTeamApproval })
+    );
 
     const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
     const token = localStorage.getItem("token");
@@ -52,7 +75,8 @@ const PpapInitiationForm = () => {
         },
         body: JSON.stringify({
           recordKey: meta.partNameNumber || meta.date || `PPAP-${Date.now()}`,
-          formData: { meta, cftQuestions },
+          customer: meta.customer,
+          formData: { meta, cftQuestions, coreTeamApproval },
         }),
       });
 
@@ -108,214 +132,477 @@ const PpapInitiationForm = () => {
       isDownloadingPdf={isDownloadingPdf}
     >
       {savedMsg && (
-        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-800 rounded-lg text-sm font-bold">
+        <div className="mb-3 p-3 bg-green-100 border border-green-500 text-green-800 rounded text-xs font-bold print:hidden">
           {savedMsg}
         </div>
       )}
 
-      {/* Header Info */}
-      <div className="grid grid-cols-1 md:grid-cols-4 border-2 border-gray-900 mb-6 divide-y md:divide-y-0 md:divide-x-2 divide-gray-900 bg-gray-50/50">
-        <div className="p-2">
-          <span className="text-[10px] font-black uppercase text-gray-500 block">From:</span>
-          <input
-            type="text"
-            value={meta.from}
-            onChange={(e) => setMeta({ ...meta, from: e.target.value })}
-            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100] bg-transparent text-xs"
-          />
-        </div>
-        <div className="p-2">
-          <span className="text-[10px] font-black uppercase text-gray-500 block">Department:</span>
-          <input
-            type="text"
-            value={meta.department}
-            onChange={(e) => setMeta({ ...meta, department: e.target.value })}
-            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100] bg-transparent text-xs"
-          />
-        </div>
-        <div className="p-2">
-          <span className="text-[10px] font-black uppercase text-gray-500 block">To:</span>
-          <span className="font-black text-gray-800 text-xs">CFT</span>
-        </div>
-        <div className="p-2">
-          <span className="text-[10px] font-black uppercase text-gray-500 block">Date:</span>
-          <input
-            type="date"
-            value={meta.date}
-            onChange={(e) => setMeta({ ...meta, date: e.target.value })}
-            className="w-full font-bold outline-none border-b border-gray-300 focus:border-[#ff9100] bg-transparent text-xs"
-          />
+      {/* From / Dept / To / Date Grid */}
+      <div className="border-b-[1.5px] border-black text-xs">
+        <div className="grid grid-cols-12 divide-x-[1.5px] divide-black">
+          <div className="col-span-12 sm:col-span-3 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">FROM :</span>
+            <input
+              type="text"
+              value={meta.from}
+              onChange={(e) => updateMeta("from", e.target.value)}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-12 sm:col-span-3 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">DEPT :</span>
+            <input
+              type="text"
+              value={meta.department}
+              onChange={(e) => updateMeta("department", e.target.value)}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+          <div className="col-span-12 sm:col-span-3 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">TO :</span>
+            <span className="font-black text-black">CFT</span>
+          </div>
+          <div className="col-span-12 sm:col-span-3 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">DATE :</span>
+            <input
+              type="date"
+              value={meta.date}
+              onChange={(e) => updateMeta("date", e.target.value)}
+              className="w-full outline-none bg-transparent text-[10px]"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Details of Request */}
-      <div className="border-2 border-gray-900 p-4 mb-6">
-        <h4 className="text-xs font-black uppercase tracking-wider text-gray-800 mb-3 border-b pb-1">
-          Details of Request
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-          <div>
-            <span className="text-[10px] font-black uppercase text-gray-500 block">Customer:</span>
+      {/* DETAILS OF REQUEST Header */}
+      <div className="border-b-[1.5px] border-black bg-gray-100 px-2 py-1 text-center font-black uppercase text-[10px] tracking-wider text-black">
+        DETAILS OF REQUEST
+      </div>
+
+      {/* Request Details 2-row grid */}
+      <div className="border-b-[1.5px] border-black text-xs">
+        <div className="grid grid-cols-12 border-b-[1.5px] border-black divide-x-[1.5px] divide-black">
+          <div className="col-span-12 sm:col-span-4 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Customer :</span>
             <input
               type="text"
               value={meta.customer}
-              onChange={(e) => setMeta({ ...meta, customer: e.target.value })}
-              className="w-full font-bold border-b border-gray-300 outline-none text-xs focus:border-[#ff9100]"
+              onChange={(e) => updateMeta("customer", e.target.value)}
+              className="w-full font-bold outline-none bg-transparent"
             />
           </div>
-          <div>
-            <span className="text-[10px] font-black uppercase text-gray-500 block">Part Name / Number:</span>
+          <div className="col-span-12 sm:col-span-5 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Part Name / Number :</span>
             <input
               type="text"
               value={meta.partNameNumber}
-              onChange={(e) => setMeta({ ...meta, partNameNumber: e.target.value })}
-              className="w-full font-bold border-b border-gray-300 outline-none text-xs focus:border-[#ff9100]"
+              onChange={(e) => updateMeta("partNameNumber", e.target.value)}
+              className="w-full font-bold outline-none bg-transparent"
             />
           </div>
-          <div>
-            <span className="text-[10px] font-black uppercase text-gray-500 block">Rev. Number:</span>
+          <div className="col-span-12 sm:col-span-3 p-1.5 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Rev. Number :</span>
             <input
               type="text"
               value={meta.revNumber}
-              onChange={(e) => setMeta({ ...meta, revNumber: e.target.value })}
-              className="w-full font-bold border-b border-gray-300 outline-none text-xs focus:border-[#ff9100]"
+              onChange={(e) => updateMeta("revNumber", e.target.value)}
+              className="w-full font-bold outline-none bg-transparent"
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2">
-            <span className="text-[10px] font-black uppercase text-gray-500 block">Reason:</span>
+
+        <div className="grid grid-cols-12 divide-x-[1.5px] divide-black">
+          <div className="col-span-12 sm:col-span-8 p-2 flex items-center">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">Reason :</span>
             <input
               type="text"
               value={meta.reason}
-              onChange={(e) => setMeta({ ...meta, reason: e.target.value })}
-              className="w-full font-bold border-b border-gray-300 outline-none text-xs focus:border-[#ff9100]"
+              onChange={(e) => updateMeta("reason", e.target.value)}
+              className="w-full outline-none bg-transparent"
+              placeholder="Reason for PPAP..."
             />
           </div>
-          <div>
-            <span className="text-[10px] font-black uppercase text-gray-500 block">Signature:</span>
+          <div className="col-span-12 sm:col-span-4 p-2 flex flex-col justify-between min-h-[48px]">
+            <span className="font-bold uppercase text-[10px] whitespace-nowrap">Sign / Date :</span>
             <input
               type="text"
+              placeholder="Sign: _____________________"
               value={meta.requestSign}
-              onChange={(e) => setMeta({ ...meta, requestSign: e.target.value })}
-              className="w-full font-bold border-b border-gray-300 outline-none text-xs focus:border-[#ff9100]"
+              onChange={(e) => updateMeta("requestSign", e.target.value)}
+              className="w-full font-bold outline-none border-b border-gray-400 focus:border-black bg-transparent text-xs pb-0.5 mt-1"
             />
           </div>
         </div>
       </div>
 
-      {/* For Use of CFT Questionnaire */}
-      <div className="border-2 border-gray-900 mb-6 divide-y divide-gray-300 text-xs">
-        <div className="bg-gray-100 p-2 font-black uppercase text-gray-800">For Use of CFT</div>
+      {/* FOR USE OF CFT Section Header */}
+      <div className="border-b-[1.5px] border-black bg-gray-100 px-2 py-1 text-center font-black uppercase text-[10px] tracking-wider text-black">
+        FOR USE OF CFT
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 p-3 gap-4 items-center">
-          <span className="font-bold text-gray-800">1) Date of first production run:</span>
-          <input
-            type="date"
-            value={cftQuestions.firstProdRunDate}
-            onChange={(e) => setCftQuestions({ ...cftQuestions, firstProdRunDate: e.target.value })}
-            className="p-1 border border-gray-300 rounded outline-none font-bold text-xs"
-          />
+      {/* 13-point CFT Questionnaire matching scanned sheet */}
+      <div className="divide-y-[1.5px] divide-black text-xs border-b-[1.5px] border-black">
+        {/* 1. Date of first production run */}
+        <div className="grid grid-cols-12 divide-x-[1.5px] divide-black p-1.5 items-center">
+          <div className="col-span-8 font-bold text-[10px]">
+            1) Date of first production run :
+          </div>
+          <div className="col-span-4 pl-2">
+            <input
+              type="date"
+              value={cftQuestions.firstProdRunDate}
+              onChange={(e) => updateCft("firstProdRunDate", e.target.value)}
+              className="w-full outline-none bg-transparent text-[10px]"
+            />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 p-3 gap-4 items-center">
-          <span className="font-bold text-gray-800">2) Quantity Produced (300 Nos or 1 Day Production qty):</span>
+        {/* 2. Quantity Produced */}
+        <div className="grid grid-cols-12 divide-x-[1.5px] divide-black p-1.5 items-center">
+          <div className="col-span-8 font-bold text-[10px]">
+            2) Quantity Produced (300 Nos or 1 Day Production qty) :
+          </div>
+          <div className="col-span-4 pl-2">
+            <input
+              type="text"
+              value={cftQuestions.qtyProduced}
+              onChange={(e) => updateCft("qtyProduced", e.target.value)}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+        </div>
+
+        {/* 3. Cycle time */}
+        <div className="grid grid-cols-12 divide-x-[1.5px] divide-black p-1.5 items-center">
+          <div className="col-span-8 font-bold text-[10px]">
+            3) Cycle time / Production Rate :
+          </div>
+          <div className="col-span-4 pl-2">
+            <input
+              type="text"
+              placeholder="e.g. 45 sec / mould"
+              value={cftQuestions.cycleTime}
+              onChange={(e) => updateCft("cycleTime", e.target.value)}
+              className="w-full font-bold outline-none bg-transparent"
+            />
+          </div>
+        </div>
+
+        {/* 4. Process Flow Diagram */}
+        <div className="grid grid-cols-12 divide-x-[1.5px] divide-black p-1.5 items-center">
+          <div className="col-span-4 font-bold text-[10px]">
+            4) Process Flow Diagram :
+          </div>
+          <div className="col-span-8 grid grid-cols-3 divide-x-[1.5px] divide-black pl-1">
+            <div className="px-1 flex items-center">
+              <span className="text-[9px] text-gray-500 mr-1">No:</span>
+              <input
+                type="text"
+                value={cftQuestions.pfdNo}
+                onChange={(e) => updateCft("pfdNo", e.target.value)}
+                className="w-full text-[10px] outline-none"
+              />
+            </div>
+            <div className="px-1 flex items-center">
+              <span className="text-[9px] text-gray-500 mr-1">Rev:</span>
+              <input
+                type="text"
+                value={cftQuestions.pfdRev}
+                onChange={(e) => updateCft("pfdRev", e.target.value)}
+                className="w-full text-[10px] outline-none"
+              />
+            </div>
+            <div className="px-1 flex items-center">
+              <span className="text-[9px] text-gray-500 mr-1">Dt:</span>
+              <input
+                type="date"
+                value={cftQuestions.pfdDate}
+                onChange={(e) => updateCft("pfdDate", e.target.value)}
+                className="w-full text-[9px] outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 5. Control Plan */}
+        <div className="grid grid-cols-12 divide-x-[1.5px] divide-black p-1.5 items-center">
+          <div className="col-span-4 font-bold text-[10px]">
+            5) Control Plan :
+          </div>
+          <div className="col-span-8 grid grid-cols-3 divide-x-[1.5px] divide-black pl-1">
+            <div className="px-1 flex items-center">
+              <span className="text-[9px] text-gray-500 mr-1">No:</span>
+              <input
+                type="text"
+                value={cftQuestions.cpNo}
+                onChange={(e) => updateCft("cpNo", e.target.value)}
+                className="w-full text-[10px] outline-none"
+              />
+            </div>
+            <div className="px-1 flex items-center">
+              <span className="text-[9px] text-gray-500 mr-1">Rev:</span>
+              <input
+                type="text"
+                value={cftQuestions.cpRev}
+                onChange={(e) => updateCft("cpRev", e.target.value)}
+                className="w-full text-[10px] outline-none"
+              />
+            </div>
+            <div className="px-1 flex items-center">
+              <span className="text-[9px] text-gray-500 mr-1">Dt:</span>
+              <input
+                type="date"
+                value={cftQuestions.cpDate}
+                onChange={(e) => updateCft("cpDate", e.target.value)}
+                className="w-full text-[9px] outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 6 & 7. Deviations to flow routing */}
+        <div className="p-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="font-bold text-[10px]">
+            6) Any Deviations to process flow routing :
+          </div>
+          <div className="flex items-center gap-4">
+            <GreenTickBox
+              id="ppap_dev_route_yes"
+              label="Yes"
+              size="sm"
+              checked={cftQuestions.routingDeviation === true}
+              onChange={() => updateCft("routingDeviation", true)}
+            />
+            <GreenTickBox
+              id="ppap_dev_route_no"
+              label="No"
+              size="sm"
+              checked={cftQuestions.routingDeviation === false}
+              onChange={() => updateCft("routingDeviation", false)}
+            />
+          </div>
+        </div>
+        <div className="p-1.5 flex items-center bg-gray-50/50">
+          <span className="font-bold text-[10px] mr-2">7) If Yes, Nature of deviation :</span>
           <input
             type="text"
-            value={cftQuestions.qtyProduced}
-            onChange={(e) => setCftQuestions({ ...cftQuestions, qtyProduced: e.target.value })}
-            className="p-1 border border-gray-300 rounded outline-none font-bold text-xs"
+            placeholder="Nature of routing deviation..."
+            value={cftQuestions.routingDeviationNature}
+            onChange={(e) => updateCft("routingDeviationNature", e.target.value)}
+            className="w-full outline-none bg-transparent border-b border-gray-300"
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 p-3 gap-4 items-center">
-          <span className="font-bold text-gray-800">3) Cycle time / Production Rate:</span>
+        {/* 8 & 9. Deviations to Control Plan */}
+        <div className="p-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="font-bold text-[10px]">
+            8) Any Deviations to Control Plan :
+          </div>
+          <div className="flex items-center gap-4">
+            <GreenTickBox
+              id="ppap_dev_cp_yes"
+              label="Yes"
+              size="sm"
+              checked={cftQuestions.cpDeviation === true}
+              onChange={() => updateCft("cpDeviation", true)}
+            />
+            <GreenTickBox
+              id="ppap_dev_cp_no"
+              label="No"
+              size="sm"
+              checked={cftQuestions.cpDeviation === false}
+              onChange={() => updateCft("cpDeviation", false)}
+            />
+          </div>
+        </div>
+        <div className="p-1.5 flex items-center bg-gray-50/50">
+          <span className="font-bold text-[10px] mr-2">9) If Yes, Nature of deviation :</span>
           <input
             type="text"
-            placeholder="e.g. 45 sec / mould"
-            value={cftQuestions.cycleTime}
-            onChange={(e) => setCftQuestions({ ...cftQuestions, cycleTime: e.target.value })}
-            className="p-1 border border-gray-300 rounded outline-none font-bold text-xs"
+            placeholder="Nature of CP deviation..."
+            value={cftQuestions.cpDeviationNature}
+            onChange={(e) => updateCft("cpDeviationNature", e.target.value)}
+            className="w-full outline-none bg-transparent border-b border-gray-300"
           />
         </div>
 
-        <div className="p-3">
-          <span className="font-bold text-gray-800 block mb-2">4) Process Flow Diagram:</span>
-          <div className="grid grid-cols-3 gap-4">
-            <input type="text" placeholder="Number" value={cftQuestions.pfdNo} onChange={e => setCftQuestions({...cftQuestions, pfdNo: e.target.value})} className="p-1 border rounded text-xs" />
-            <input type="text" placeholder="Rev No" value={cftQuestions.pfdRev} onChange={e => setCftQuestions({...cftQuestions, pfdRev: e.target.value})} className="p-1 border rounded text-xs" />
-            <input type="date" value={cftQuestions.pfdDate} onChange={e => setCftQuestions({...cftQuestions, pfdDate: e.target.value})} className="p-1 border rounded text-xs" />
+        {/* 10. PSW internal approval on */}
+        <div className="grid grid-cols-12 divide-x-[1.5px] divide-black p-1.5 items-center">
+          <div className="col-span-8 font-bold text-[10px]">
+            10) PSW internal approval on :
+          </div>
+          <div className="col-span-4 pl-2">
+            <input
+              type="date"
+              value={cftQuestions.pswApprovalDate}
+              onChange={(e) => updateCft("pswApprovalDate", e.target.value)}
+              className="w-full outline-none bg-transparent text-[10px]"
+            />
           </div>
         </div>
 
-        <div className="p-3">
-          <span className="font-bold text-gray-800 block mb-2">5) Control Plan:</span>
-          <div className="grid grid-cols-3 gap-4">
-            <input type="text" placeholder="Number" value={cftQuestions.cpNo} onChange={e => setCftQuestions({...cftQuestions, cpNo: e.target.value})} className="p-1 border rounded text-xs" />
-            <input type="text" placeholder="Rev No" value={cftQuestions.cpRev} onChange={e => setCftQuestions({...cftQuestions, cpRev: e.target.value})} className="p-1 border rounded text-xs" />
-            <input type="date" value={cftQuestions.cpDate} onChange={e => setCftQuestions({...cftQuestions, cpDate: e.target.value})} className="p-1 border rounded text-xs" />
+        {/* 11. Submission required to Customer */}
+        <div className="p-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="font-bold text-[10px]">
+            11) Submission required to Customer :
+          </div>
+          <div className="flex items-center gap-4">
+            <GreenTickBox
+              id="ppap_sub_yes"
+              label="Yes"
+              size="sm"
+              checked={cftQuestions.submissionRequired === true}
+              onChange={() => updateCft("submissionRequired", true)}
+            />
+            <GreenTickBox
+              id="ppap_sub_no"
+              label="No"
+              size="sm"
+              checked={cftQuestions.submissionRequired === false}
+              onChange={() => updateCft("submissionRequired", false)}
+            />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 p-3 gap-4 items-center">
-          <span className="font-bold text-gray-800">6) Any Deviations to process flow routing:</span>
-          <div className="flex gap-4">
-            {["Yes", "No"].map(c => (
-              <label key={c} className="flex items-center gap-1 font-bold">
-                <input type="radio" name="devRouting" checked={(c === "Yes") === cftQuestions.routingDeviation} onChange={() => setCftQuestions({...cftQuestions, routingDeviation: c === "Yes"})} />
-                {c}
-              </label>
-            ))}
+        {/* 12. Status of the samples submitted */}
+        <div className="p-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="font-bold text-[10px]">
+            12) Status of the samples submitted :
+          </div>
+          <div className="flex items-center gap-4">
+            <GreenTickBox
+              id="ppap_status_app"
+              label="Approved"
+              size="sm"
+              checked={cftQuestions.submissionStatus === "Approved"}
+              onChange={() => updateCft("submissionStatus", "Approved")}
+            />
+            <GreenTickBox
+              id="ppap_status_rej"
+              label="Rejected"
+              size="sm"
+              checked={cftQuestions.submissionStatus === "Rejected"}
+              onChange={() => updateCft("submissionStatus", "Rejected")}
+            />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 p-3 gap-4 items-center">
-          <span className="font-bold text-gray-800">8) Any Deviations to Control Plan:</span>
-          <div className="flex gap-4">
-            {["Yes", "No"].map(c => (
-              <label key={c} className="flex items-center gap-1 font-bold">
-                <input type="radio" name="devCp" checked={(c === "Yes") === cftQuestions.cpDeviation} onChange={() => setCftQuestions({...cftQuestions, cpDeviation: c === "Yes"})} />
-                {c}
-              </label>
-            ))}
+        {/* 13. Product Despatch Authorisation */}
+        <div className="grid grid-cols-12 divide-x-[1.5px] divide-black p-2 items-center min-h-[48px]">
+          <div className="col-span-5 font-bold text-[10px] uppercase">
+            13) Product Despatch Authorisation By :
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 p-3 gap-4 items-center bg-yellow-50/50">
-          <span className="font-bold text-gray-800">10) PSW internal approval on:</span>
-          <input
-            type="date"
-            value={cftQuestions.pswApprovalDate}
-            onChange={(e) => setCftQuestions({ ...cftQuestions, pswApprovalDate: e.target.value })}
-            className="p-1 border border-gray-300 rounded font-bold text-xs"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 p-3 gap-4 items-center">
-          <span className="font-bold text-gray-800">13) Product Despatch Authorisation By:</span>
-          <input
-            type="text"
-            placeholder="Authorized Signatory Name / Dept"
-            value={cftQuestions.despatchAuthBy}
-            onChange={(e) => setCftQuestions({ ...cftQuestions, despatchAuthBy: e.target.value })}
-            className="p-1 border border-gray-300 rounded font-bold text-xs"
-          />
+          <div className="col-span-7 grid grid-cols-3 divide-x-[1.5px] divide-black pl-1">
+            <div className="px-1.5 flex flex-col justify-between">
+              <span className="text-[8px] uppercase text-gray-500 font-bold">Sign</span>
+              <input
+                type="text"
+                placeholder="Sign: _________"
+                value={cftQuestions.despatchAuthSign}
+                onChange={(e) => updateCft("despatchAuthSign", e.target.value)}
+                className="w-full text-[10px] outline-none border-b border-gray-400 focus:border-black bg-transparent pb-0.5"
+              />
+            </div>
+            <div className="px-1.5 flex flex-col justify-between">
+              <span className="text-[8px] uppercase text-gray-500 font-bold">Name</span>
+              <input
+                type="text"
+                placeholder="Authority Name"
+                value={cftQuestions.despatchAuthBy}
+                onChange={(e) => updateCft("despatchAuthBy", e.target.value)}
+                className="w-full text-[10px] outline-none font-bold border-b border-gray-300 bg-transparent pb-0.5"
+              />
+            </div>
+            <div className="px-1.5 flex flex-col justify-between">
+              <span className="text-[8px] uppercase text-gray-500 font-bold">Date</span>
+              <input
+                type="date"
+                value={cftQuestions.despatchAuthDate}
+                onChange={(e) => updateCft("despatchAuthDate", e.target.value)}
+                className="w-full text-[9px] outline-none bg-transparent"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Approved by Core Team */}
-      <div className="border-2 border-gray-900 p-4">
-        <h4 className="text-xs font-black uppercase tracking-wider text-gray-800 mb-3">Approved By Core Team</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          {[1, 2, 3].map(num => (
-            <div key={num} className="border border-gray-300 p-3 rounded bg-white space-y-1.5">
-              <span className="font-black text-gray-500 block mb-1">Core Member {num}</span>
-              <input type="text" placeholder="Sign" className="w-full border-b outline-none text-xs font-bold" />
-              <input type="text" placeholder="Name" className="w-full border-b outline-none text-xs" />
-              <input type="date" className="w-full text-[10px] text-gray-600 outline-none" />
+      {/* APPROVED BY CORE TEAM Header */}
+      <div className="border-b-[1.5px] border-black bg-gray-100 px-2 py-1 text-center font-black uppercase text-[10px] tracking-wider text-black">
+        APPROVED BY CORE TEAM
+      </div>
+
+      {/* Core Team Approvals Grid (Production, Quality, Marketing/CFT) – uniform spacious signing boxes */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x-[1.5px] divide-black text-xs">
+        {PPAP_CORE_TEAMS.map((team) => (
+          <div key={team} className="p-3 flex flex-col justify-between min-h-[110px] bg-white">
+            <span className="font-black text-[11px] uppercase tracking-wider text-black block border-b border-gray-200 pb-1 text-center">
+              {team}
+            </span>
+            <div className="flex items-center justify-center gap-4 my-1.5">
+              <GreenTickBox
+                id={`ppap_core_ok_${team}`}
+                label="OK"
+                size="sm"
+                checked={coreTeamApproval[team]?.ok}
+                onChange={() =>
+                  setCoreTeamApproval({
+                    ...coreTeamApproval,
+                    [team]: { ...coreTeamApproval[team], ok: true, notOk: false },
+                  })
+                }
+              />
+              <GreenTickBox
+                id={`ppap_core_notok_${team}`}
+                label="Not OK"
+                size="sm"
+                checked={coreTeamApproval[team]?.notOk}
+                onChange={() =>
+                  setCoreTeamApproval({
+                    ...coreTeamApproval,
+                    [team]: { ...coreTeamApproval[team], ok: false, notOk: true },
+                  })
+                }
+              />
             </div>
-          ))}
-        </div>
+            <div className="space-y-1.5 mt-1">
+              <div>
+                <span className="text-[8px] uppercase font-bold text-gray-500 block">Signature :</span>
+                <input
+                  type="text"
+                  placeholder="Sign: _____________________"
+                  value={coreTeamApproval[team]?.sign}
+                  onChange={(e) =>
+                    setCoreTeamApproval({
+                      ...coreTeamApproval,
+                      [team]: { ...coreTeamApproval[team], sign: e.target.value },
+                    })
+                  }
+                  className="w-full text-[10px] font-bold border-b border-gray-400 focus:border-black outline-none pb-0.5 text-center bg-transparent"
+                />
+              </div>
+              <div>
+                <span className="text-[8px] uppercase font-bold text-gray-500 block">Date :</span>
+                <input
+                  type="date"
+                  value={coreTeamApproval[team]?.date}
+                  onChange={(e) =>
+                    setCoreTeamApproval({
+                      ...coreTeamApproval,
+                      [team]: { ...coreTeamApproval[team], date: e.target.value },
+                    })
+                  }
+                  className="w-full text-[9px] text-gray-600 outline-none text-center bg-transparent"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer line */}
+      <div className="flex justify-between items-center text-[10px] font-bold text-gray-800 p-1 border-t-[1.5px] border-black font-mono">
+        <span>QF / 07 / MRO – 05</span>
+        <span>20.08.2016</span>
       </div>
     </FormWrapper>
   );

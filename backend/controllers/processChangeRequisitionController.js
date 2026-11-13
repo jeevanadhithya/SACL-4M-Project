@@ -2,6 +2,7 @@ const { sql, poolPromise } = require("../db");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const { getLogoPath, drawCheckbox, drawFormHeader } = require("../utils/pdfTheme");
 
 /**
  * 1. FETCH PROCESS CHANGE REQUISITION RECORD
@@ -181,36 +182,26 @@ exports.generateReport = async (req, res) => {
     const pageWidth = doc.page.width - 56; // ~539 pt
     let currentY = startY;
 
-    // Header Box
-    doc.lineWidth(1).rect(startX, currentY, pageWidth, 55).stroke();
-
-    // Logo
-    const logoPath = path.join(__dirname, "logo.jpg");
-    if (fs.existsSync(logoPath)) {
-      try {
-        doc.image(logoPath, startX + 5, currentY + 6, { width: 45, height: 42 });
-      } catch (e) {}
-    }
-
-    doc.font("Helvetica-Bold").fontSize(13).text("SAKTHI AUTO COMPONENT LIMITED", startX + 60, currentY + 14, { width: 330, align: "center" });
-    doc.font("Helvetica-Bold").fontSize(10.5).text("PROCESS CHANGE REQUISITION FORM", startX + 60, currentY + 32, { width: 330, align: "center" });
-
-    doc.lineWidth(0.5).rect(startX + 400, currentY, pageWidth - 400, 55).stroke();
-    doc.font("Helvetica").fontSize(7.5);
-    doc.text(`PCRF No: ${formData.pcrfNo || "-"}`, startX + 405, currentY + 12);
-    doc.text(`Date: ${formData.date || "-"}`, startX + 405, currentY + 26);
-    doc.font("Helvetica-Bold").fontSize(7).text("QF/07/MRO-15 Rev.03", startX + 405, currentY + 40);
-
-    currentY += 55;
+    // Header Box with centered title and Sakthi Logo from backend/assets
+    const headerH = drawFormHeader(doc, {
+      startX,
+      currentY,
+      pageWidth,
+      title: "PROCESS CHANGE REQUISITION FORM",
+      qfNo: "QF/07/MRO-15 Rev.03",
+      docNo: formData.pcrfNo || "-",
+      revDate: "dt 04.10.2021",
+    });
+    currentY += headerH;
 
     // Meta Section
     const colW = pageWidth / 3;
     const rowH = 18;
 
     const drawCell = (x, y, w, h, title, val) => {
-      doc.lineWidth(0.5).rect(x, y, w, h).stroke();
-      doc.font("Helvetica-Bold").fontSize(7).text(title, x + 3, y + 4);
-      doc.font("Helvetica").fontSize(7.5).text(String(val || "-"), x + 3, y + 11);
+      doc.lineWidth(0.5).strokeColor("#000000").rect(x, y, w, h).stroke();
+      doc.font("Helvetica-Bold").fontSize(7).fillColor("#374151").text(title, x + 3, y + 4);
+      doc.font("Helvetica").fontSize(7.5).fillColor("#000000").text(String(val || "-"), x + 3, y + 11);
     };
 
     drawCell(startX, currentY, colW, rowH, "REQUISITION BY", formData.requisitionBy);
@@ -228,28 +219,34 @@ exports.generateReport = async (req, res) => {
     drawCell(startX + colW * 2, currentY, colW, rowH, "PART NO", formData.partNo);
     currentY += rowH;
 
-    // 4M Classification Bar
-    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, 20).stroke();
-    doc.font("Helvetica-Bold").fontSize(7.5).text("CLASSIFICATION (4M):", startX + 6, currentY + 6);
+    // 4M Classification Bar with Green Ticks
+    doc.lineWidth(0.5).strokeColor("#000000").rect(startX, currentY, pageWidth, 22).stroke();
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#111827").text("CLASSIFICATION :", startX + 6, currentY + 7);
 
     const mY = currentY + 6;
-    const manStr = formData.classification?.man ? "[X] MAN" : "[ ] MAN";
-    const mcStr = formData.classification?.machine ? "[X] MACHINE" : "[ ] MACHINE";
-    const matStr = formData.classification?.material ? "[X] MATERIAL" : "[ ] MATERIAL";
-    const methStr = formData.classification?.method ? "[X] METHOD" : "[ ] METHOD";
+    drawCheckbox(doc, startX + 130, mY, !!formData.classification?.man, 10);
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#000000").text("MAN", startX + 144, mY + 2);
 
-    doc.font("Helvetica-Bold").fontSize(8);
-    doc.text(manStr, startX + 130, mY);
-    doc.text(mcStr, startX + 220, mY);
-    doc.text(matStr, startX + 320, mY);
-    doc.text(methStr, startX + 430, mY);
+    drawCheckbox(doc, startX + 220, mY, !!formData.classification?.machine, 10);
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#000000").text("MACHINE", startX + 234, mY + 2);
 
-    currentY += 20;
+    drawCheckbox(doc, startX + 320, mY, !!formData.classification?.material, 10);
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#000000").text("MATERIAL", startX + 334, mY + 2);
 
-    // Details of Change Required Table
-    const tableHeaderH = 18;
-    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, tableHeaderH).fillAndStroke("#F0F0F0", "#000000");
-    doc.fillColor("#000000").font("Helvetica-Bold").fontSize(7.5);
+    drawCheckbox(doc, startX + 430, mY, !!formData.classification?.method, 10);
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#000000").text("METHOD", startX + 444, mY + 2);
+
+    currentY += 22;
+
+    // Details of Change Required Section Bar
+    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, 16).fillAndStroke("#E5E7EB", "#000000");
+    doc.font("Helvetica-Bold").fontSize(8).fillColor("#111827").text("DETAILS OF CHANGE REQUIRED", startX, currentY + 4, { width: pageWidth, align: "center" });
+    currentY += 16;
+
+    // Table Header
+    const tableHeaderH = 16;
+    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, tableHeaderH).fillAndStroke("#F3F4F6", "#000000");
+    doc.fillColor("#1F2937").font("Helvetica-Bold").fontSize(7);
     doc.text("S.No", startX + 4, currentY + 5);
     doc.text("PARTICULARS", startX + 35, currentY + 5);
     doc.text("CURRENT STATUS", startX + 260, currentY + 5);
@@ -259,71 +256,136 @@ exports.generateReport = async (req, res) => {
 
     const rows = formData.particularsRows || [{ particular: "-", currentStatus: "-", f: false, m: false, fem: false }];
     rows.forEach((r, idx) => {
-      const itemH = 20;
+      const itemH = 22;
       doc.lineWidth(0.5).rect(startX, currentY, pageWidth, itemH).stroke();
-      doc.font("Helvetica").fontSize(7.5);
-      doc.text(String(idx + 1), startX + 6, currentY + 6);
-      doc.text(r.particular || "-", startX + 35, currentY + 6, { width: 220 });
-      doc.text(r.currentStatus || "-", startX + 260, currentY + 6, { width: 130 });
+      doc.font("Helvetica").fontSize(7.5).fillColor("#000000");
+      doc.text(String(idx + 1), startX + 6, currentY + 7);
+      doc.text(r.particular || "-", startX + 35, currentY + 7, { width: 220 });
+      doc.text(r.currentStatus || "-", startX + 260, currentY + 7, { width: 130 });
 
-      const fBox = r.f ? "[X] F" : "[ ] F";
-      const mBox = r.m ? "[X] M" : "[ ] M";
-      const femBox = r.fem ? "[X] F&M" : "[ ] F&M";
-      doc.text(`${fBox}   ${mBox}   ${femBox}`, startX + 395, currentY + 6);
+      // Checkboxes with Green Ticks for F / M / F&M
+      const boxY = currentY + 6;
+      drawCheckbox(doc, startX + 395, boxY, !!r.f, 9);
+      doc.font("Helvetica-Bold").fontSize(7).text("F", startX + 408, boxY + 2);
+
+      drawCheckbox(doc, startX + 430, boxY, !!r.m, 9);
+      doc.font("Helvetica-Bold").fontSize(7).text("M", startX + 443, boxY + 2);
+
+      drawCheckbox(doc, startX + 465, boxY, !!r.fem, 9);
+      doc.font("Helvetica-Bold").fontSize(7).text("F&M", startX + 478, boxY + 2);
+
       currentY += itemH;
     });
 
     // Reason for Change Required
-    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, 42).stroke();
-    doc.font("Helvetica-Bold").fontSize(8).text("REASON FOR CHANGE REQUIRED", startX + 6, currentY + 4);
-    const prodCheck = formData.reason?.product ? "[X] Product" : "[ ] Product";
-    const procCheck = formData.reason?.process ? "[X] Process" : "[ ] Process";
-    const othCheck = formData.reason?.other ? "[X] Other" : "[ ] Other";
-    doc.font("Helvetica-Bold").fontSize(7.5).text(`Category: ${prodCheck}     ${procCheck}     ${othCheck}`, startX + 6, currentY + 16);
-    doc.font("Helvetica").fontSize(7.5).text(`Details: ${formData.reason?.details || "-"}`, startX + 6, currentY + 28, { width: pageWidth - 12 });
-    currentY += 42;
+    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, 16).fillAndStroke("#E5E7EB", "#000000");
+    doc.font("Helvetica-Bold").fontSize(8).fillColor("#111827").text("REASON FOR CHANGE REQUIRED", startX, currentY + 4, { width: pageWidth, align: "center" });
+    currentY += 16;
 
-    // CFT Comments
+    const reasonH = 46;
+    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, reasonH).stroke();
+    const rY = currentY + 6;
+    drawCheckbox(doc, startX + 12, rY, !!formData.reason?.product, 9);
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#000000").text("Product", startX + 25, rY + 1);
+
+    drawCheckbox(doc, startX + 80, rY, !!formData.reason?.process, 9);
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#000000").text("Process", startX + 93, rY + 1);
+
+    drawCheckbox(doc, startX + 150, rY, !!formData.reason?.other, 9);
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#000000").text("Other any one", startX + 163, rY + 1);
+
+    doc.font("Helvetica").fontSize(7.5).fillColor("#111827").text(`Details: ${formData.reason?.details || "-"}`, startX + 12, currentY + 22, { width: pageWidth - 24 });
+    currentY += reasonH;
+
+    // CFT Comments - 2 Columns
     const cftW = pageWidth / 2;
-    const cftH = 50;
+    const cftH = 64;
+    doc.lineWidth(0.5).rect(startX, currentY, cftW, 16).fillAndStroke("#E5E7EB", "#000000");
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#111827").text("CFT COMMENTS - FOUNDRY", startX, currentY + 4, { width: cftW, align: "center" });
+
+    doc.rect(startX + cftW, currentY, cftW, 16).fillAndStroke("#E5E7EB", "#000000");
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#111827").text("CFT COMMENTS - MACHINE SHOP", startX + cftW, currentY + 4, { width: cftW, align: "center" });
+
+    currentY += 16;
+
     doc.lineWidth(0.5).rect(startX, currentY, cftW, cftH).stroke();
     doc.rect(startX + cftW, currentY, cftW, cftH).stroke();
 
-    doc.font("Helvetica-Bold").fontSize(7.5).text("CFT COMMENTS - FOUNDRY", startX + 6, currentY + 5);
-    doc.font("Helvetica").fontSize(7).text(`Feasibility: ${formData.foundry?.feasibility || "-"}`, startX + 6, currentY + 16);
-    doc.text(`Comments: ${formData.foundry?.comments || "-"}`, startX + 6, currentY + 26, { width: cftW - 12 });
-    doc.text(`Leader Sign: ${formData.foundry?.leaderSign || "-"}    Date: ${formData.foundry?.date || "-"}`, startX + 6, currentY + 39);
+    // Foundry Content
+    const isFProcess = !!formData.foundry?.isProcess;
+    const isFProduct = !!formData.foundry?.isProduct;
+    const isFFeasible = formData.foundry?.feasibility === "feasible";
+    const isFNotFeasible = formData.foundry?.feasibility === "not_feasible";
 
-    doc.font("Helvetica-Bold").fontSize(7.5).text("CFT COMMENTS - MACHINE SHOP", startX + cftW + 6, currentY + 5);
-    doc.font("Helvetica").fontSize(7).text(`Feasibility: ${formData.machineShop?.feasibility || "-"}`, startX + cftW + 6, currentY + 16);
-    doc.text(`Comments: ${formData.machineShop?.comments || "-"}`, startX + cftW + 6, currentY + 26, { width: cftW - 12 });
-    doc.text(`Leader Sign: ${formData.machineShop?.leaderSign || "-"}    Date: ${formData.machineShop?.date || "-"}`, startX + cftW + 6, currentY + 39);
+    drawCheckbox(doc, startX + 8, currentY + 6, isFProcess, 9);
+    doc.font("Helvetica").fontSize(7).fillColor("#000000").text("Process", startX + 20, currentY + 7);
+    drawCheckbox(doc, startX + 62, currentY + 6, isFProduct, 9);
+    doc.text("Product", startX + 74, currentY + 7);
+
+    drawCheckbox(doc, startX + 120, currentY + 6, isFFeasible, 9);
+    doc.font("Helvetica-Bold").fontSize(7).fillColor(isFFeasible ? "#16a34a" : "#000000").text("Feasible", startX + 132, currentY + 7);
+    drawCheckbox(doc, startX + 185, currentY + 6, isFNotFeasible, 9);
+    doc.font("Helvetica-Bold").fontSize(7).fillColor(isFNotFeasible ? "#dc2626" : "#000000").text("Not Feasible", startX + 197, currentY + 7);
+
+    doc.font("Helvetica").fontSize(7).fillColor("#000000").text(`Comments: ${formData.foundry?.comments || "-"}`, startX + 8, currentY + 22, { width: cftW - 16 });
+    doc.text(`CFT Leader Sign: ${formData.foundry?.leaderSign || "-"}       Date: ${formData.foundry?.date || "-"}`, startX + 8, currentY + 48);
+
+    // Machine Shop Content
+    const isMProcess = !!formData.machineShop?.isProcessOnly;
+    const isMProduct = !!formData.machineShop?.isProduct;
+    const isMFeasible = formData.machineShop?.feasibility === "feasible";
+    const isMNotFeasible = formData.machineShop?.feasibility === "not_feasible";
+
+    drawCheckbox(doc, startX + cftW + 8, currentY + 6, isMProcess, 9);
+    doc.font("Helvetica").fontSize(7).fillColor("#000000").text("Process only", startX + cftW + 20, currentY + 7);
+    drawCheckbox(doc, startX + cftW + 75, currentY + 6, isMProduct, 9);
+    doc.text("Product", startX + cftW + 87, currentY + 7);
+
+    drawCheckbox(doc, startX + cftW + 130, currentY + 6, isMFeasible, 9);
+    doc.font("Helvetica-Bold").fontSize(7).fillColor(isMFeasible ? "#16a34a" : "#000000").text("Feasible", startX + cftW + 142, currentY + 7);
+    drawCheckbox(doc, startX + cftW + 195, currentY + 6, isMNotFeasible, 9);
+    doc.font("Helvetica-Bold").fontSize(7).fillColor(isMNotFeasible ? "#dc2626" : "#000000").text("Not Feasible", startX + cftW + 207, currentY + 7);
+
+    doc.font("Helvetica").fontSize(7).fillColor("#000000").text(`Comments: ${formData.machineShop?.comments || "-"}`, startX + cftW + 8, currentY + 22, { width: cftW - 16 });
+    doc.text(`CFT Leader Sign: ${formData.machineShop?.leaderSign || "-"}       Date: ${formData.machineShop?.date || "-"}`, startX + cftW + 8, currentY + 48);
 
     currentY += cftH;
 
     // Internal Approval Box
-    const appH = 34;
+    const appH = 36;
+    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, 16).fillAndStroke("#E5E7EB", "#000000");
+    doc.font("Helvetica-Bold").fontSize(8).fillColor("#111827").text("INTERNAL APPROVAL", startX, currentY + 4, { width: pageWidth, align: "center" });
+    currentY += 16;
+
     doc.lineWidth(0.5).rect(startX, currentY, pageWidth, appH).stroke();
-    doc.font("Helvetica-Bold").fontSize(8).text("INTERNAL APPROVAL", startX + 6, currentY + 4);
-    const appB = formData.approval?.approved ? "[X] APPROVED" : "[ ] APPROVED";
-    const rejB = formData.approval?.rejected ? "[X] REJECTED" : "[ ] REJECTED";
-    doc.font("Helvetica-Bold").fontSize(8).text(`${appB}      ${rejB}`, startX + 6, currentY + 16);
-    doc.font("Helvetica").fontSize(7.5).text(`Approving Authority: ${formData.approval?.approvingAuthority || "PLANT HEAD"}`, startX + 280, currentY + 16);
-    doc.text(`Signature: ${formData.approval?.signature || "Signed"}`, startX + 280, currentY + 24);
+    drawCheckbox(doc, startX + 14, currentY + 12, !!formData.approval?.approved, 10);
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor(formData.approval?.approved ? "#16a34a" : "#000000").text("APPROVED", startX + 28, currentY + 14);
+
+    drawCheckbox(doc, startX + 90, currentY + 12, !!formData.approval?.rejected, 10);
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor(formData.approval?.rejected ? "#dc2626" : "#000000").text("REJECTED", startX + 104, currentY + 14);
+
+    doc.font("Helvetica").fontSize(7.5).fillColor("#000000").text(`Approving Authority: ${formData.approval?.approvingAuthority || "PLANT HEAD"}`, startX + 280, currentY + 8);
+    doc.text(`Signature: ${formData.approval?.signature || "Signed"}`, startX + 280, currentY + 20);
 
     currentY += appH;
 
     // Customer Communication Detail
+    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, 16).fillAndStroke("#E5E7EB", "#000000");
+    doc.font("Helvetica-Bold").fontSize(8).fillColor("#111827").text("CUSTOMER COMMUNICATION DETAIL", startX, currentY + 4, { width: pageWidth, align: "center" });
+    currentY += 16;
+
     const custH = 34;
     doc.lineWidth(0.5).rect(startX, currentY, pageWidth, custH).stroke();
-    doc.font("Helvetica-Bold").fontSize(8).text("CUSTOMER COMMUNICATION DETAIL", startX + 6, currentY + 4);
-    const sopB = formData.customerCommunication?.changeReflectionInSop ? "[X]" : "[ ]";
-    const fwdB = formData.customerCommunication?.nextForwarded ? "[X]" : "[ ]";
-    doc.font("Helvetica").fontSize(7.5).text(`Actions: ${sopB} Change reflection in SOP      ${fwdB} Forwarded to Next Level`, startX + 6, currentY + 15);
-    doc.text(`Notes: ${formData.customerCommunication?.handleNotes || "-"}`, startX + 6, currentY + 24, { width: pageWidth - 12 });
+    drawCheckbox(doc, startX + 12, currentY + 8, !!formData.customerCommunication?.changeReflectionInSop, 9);
+    doc.font("Helvetica").fontSize(7.5).fillColor("#000000").text("Change reflection in SOP", startX + 25, currentY + 9);
+
+    drawCheckbox(doc, startX + 180, currentY + 8, !!formData.customerCommunication?.nextForwarded, 9);
+    doc.font("Helvetica").fontSize(7.5).fillColor("#000000").text("Forwarded to Next Level", startX + 193, currentY + 9);
+
+    doc.text(`Notes: ${formData.customerCommunication?.handleNotes || "-"}`, startX + 12, currentY + 22, { width: pageWidth - 24 });
 
     // Footer QF String
-    doc.font("Helvetica-Bold").fontSize(8).text("QF/07/MRO-15, Rev.No: 03 dt 04.10.2021", startX, doc.page.height - 20);
+    doc.font("Helvetica-Bold").fontSize(8).fillColor("#374151").text("QF/07/MRO-15, Rev.No: 03 dt 04.10.2021", startX, doc.page.height - 24);
 
     doc.end();
   } catch (err) {

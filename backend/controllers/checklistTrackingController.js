@@ -2,6 +2,7 @@ const { sql, poolPromise } = require("../db");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const { getLogoPath, drawCheckbox, drawFormHeader } = require("../utils/pdfTheme");
 
 exports.getRecord = async (req, res) => {
   const { partNo, part } = req.query;
@@ -88,21 +89,16 @@ exports.generateReport = async (req, res) => {
     const pageWidth = doc.page.width - 40;
     let currentY = 20;
 
-    doc.lineWidth(1).rect(startX, currentY, pageWidth, 45).stroke();
-    const logoPath = path.join(__dirname, "logo.jpg");
-    if (fs.existsSync(logoPath)) {
-      try { doc.image(logoPath, startX + 5, currentY + 4, { width: 40, height: 36 }); } catch (e) {}
-    }
-
-    doc.font("Helvetica-Bold").fontSize(13).text("SAKTHI AUTO COMPONENT LIMITED", startX + 50, currentY + 10, { width: pageWidth - 250, align: "center" });
-    doc.font("Helvetica-Bold").fontSize(11).text("CHECKLIST FOR MANAGING AND TRACKING CHANGE", startX + 50, currentY + 26, { width: pageWidth - 250, align: "center" });
-
-    doc.lineWidth(0.5).rect(startX + pageWidth - 180, currentY, 180, 45).stroke();
-    doc.font("Helvetica").fontSize(7.5);
-    doc.text(`Part No: ${partNo || "SK-890"}`, startX + pageWidth - 175, currentY + 12);
-    doc.font("Helvetica-Bold").text("QF/07/MRO-03 (01.12.2003)", startX + pageWidth - 175, currentY + 26);
-
-    currentY += 45;
+    const headerH = drawFormHeader(doc, {
+      startX,
+      currentY,
+      pageWidth,
+      title: "CHECKLIST FOR MANAGING AND TRACKING CHANGE",
+      qfNo: "QF/07/MRO-03",
+      docNo: partNo || "SK-890",
+      revDate: "01.12.2003",
+    });
+    currentY += headerH;
 
     const items = [
       "Assembly Drawing Change",
@@ -117,8 +113,8 @@ exports.generateReport = async (req, res) => {
     ];
 
     const colW = [190, 35, 35, 170, 80, 55, 55, 65, 116];
-    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, 22).fillAndStroke("#F0F0F0", "#000000");
-    doc.fillColor("#000000").font("Helvetica-Bold").fontSize(7);
+    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, 22).fillAndStroke("#F3F4F6", "#000000");
+    doc.fillColor("#111827").font("Helvetica-Bold").fontSize(7);
 
     let cx = startX;
     ["Impact of Change to be considered on", "Yes", "No", "Action Comments", "Responsibility", "Reqd Date", "Actual Date", "Doc No", "Remarks"].forEach((h, i) => {
@@ -130,10 +126,12 @@ exports.generateReport = async (req, res) => {
     items.forEach((item) => {
       const rowH = 18;
       doc.lineWidth(0.5).rect(startX, currentY, pageWidth, rowH).stroke();
-      doc.font("Helvetica-Bold").fontSize(7.5).text(item, startX + 4, currentY + 5, { width: 182 });
+      doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#000000").text(item, startX + 4, currentY + 5, { width: 182 });
       doc.font("Helvetica").fontSize(7);
-      doc.text("[X]", startX + 195, currentY + 5);
-      doc.text("[ ]", startX + 230, currentY + 5);
+
+      drawCheckbox(doc, startX + 195 + (35 - 9) / 2, currentY + 4, true, 9);
+      drawCheckbox(doc, startX + 230 + (35 - 9) / 2, currentY + 4, false, 9);
+
       doc.text("Updated with change notes", startX + 265, currentY + 5, { width: 160 });
       doc.text("Production", startX + 435, currentY + 5);
       doc.text("10.11.2026", startX + 515, currentY + 5);

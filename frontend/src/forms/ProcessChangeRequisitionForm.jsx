@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FormHeader from "../components/FormHeader";
 import Header from "../components/Header";
+import GreenTickBox from "../components/GreenTickBox";
 import { ArrowLeft, Save, CheckCircle, Plus, FileDown, Loader } from "lucide-react";
 import { generateProcessChangeRequisitionPDF } from "../utils/pdfGenerators";
 
@@ -282,33 +283,35 @@ const ProcessChangeRequisitionForm = () => {
 
             {/* ROW 2: REQUISITION BY | REQUISITIONER SIGN | PCRF NO */}
             <div className="grid grid-cols-12 border-b-[1.5px] border-black">
-              <div className="col-span-12 sm:col-span-4 border-b sm:border-b-0 sm:border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+              <div className="col-span-12 sm:col-span-4 border-b sm:border-b-0 sm:border-r-[1.5px] border-black px-2 py-2 flex items-center">
                 <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">REQUISITION BY :</span>
                 <input
                   type="text"
                   value={formData.requisitionBy}
                   onChange={(e) => setFormData({ ...formData, requisitionBy: e.target.value })}
-                  
+                  placeholder="Initiator Name"
                   className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs"
                 />
               </div>
-              <div className="col-span-12 sm:col-span-5 border-b sm:border-b-0 sm:border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
-                <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">REQUISITIONER SIGN :</span>
-                <input
-                  type="text"
-                  value={formData.requisitionerSign}
-                  onChange={(e) => setFormData({ ...formData, requisitionerSign: e.target.value })}
-                  
-                  className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs"
-                />
+              <div className="col-span-12 sm:col-span-5 border-b sm:border-b-0 sm:border-r-[1.5px] border-black px-2 py-1.5 flex flex-col justify-between min-h-[46px]">
+                <span className="font-bold uppercase text-[10px] whitespace-nowrap">REQUISITIONER SIGN :</span>
+                <div className="flex items-center gap-1 mt-1">
+                  <input
+                    type="text"
+                    value={formData.requisitionerSign}
+                    onChange={(e) => setFormData({ ...formData, requisitionerSign: e.target.value })}
+                    placeholder="Signature / Approved"
+                    className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs border-b border-gray-400 focus:border-black"
+                  />
+                </div>
               </div>
-              <div className="col-span-12 sm:col-span-3 px-2 py-1.5 flex items-center">
+              <div className="col-span-12 sm:col-span-3 px-2 py-2 flex items-center">
                 <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">PCRF NO. :</span>
                 <input
                   type="text"
                   value={formData.pcrfNo}
                   onChange={(e) => setFormData({ ...formData, pcrfNo: e.target.value })}
-                  
+                  placeholder="PCRF-XXXX"
                   className="w-full font-mono font-bold outline-none px-1 py-0.5 bg-transparent text-xs"
                 />
               </div>
@@ -316,27 +319,29 @@ const ProcessChangeRequisitionForm = () => {
 
             {/* ROW 3: DEPARTMENT | REQUISITIONER HOD SIGN | DATE */}
             <div className="grid grid-cols-12 border-b-[1.5px] border-black">
-              <div className="col-span-12 sm:col-span-4 border-b sm:border-b-0 sm:border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
+              <div className="col-span-12 sm:col-span-4 border-b sm:border-b-0 sm:border-r-[1.5px] border-black px-2 py-2 flex items-center">
                 <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">DEPARTMENT :</span>
                 <input
                   type="text"
                   value={formData.department}
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  
+                  placeholder="Department Name"
                   className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs"
                 />
               </div>
-              <div className="col-span-12 sm:col-span-5 border-b sm:border-b-0 sm:border-r-[1.5px] border-black px-2 py-1.5 flex items-center">
-                <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">REQUISITIONER HOD SIGN :</span>
-                <input
-                  type="text"
-                  value={formData.hodSign}
-                  onChange={(e) => setFormData({ ...formData, hodSign: e.target.value })}
-                  
-                  className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs"
-                />
+              <div className="col-span-12 sm:col-span-5 border-b sm:border-b-0 sm:border-r-[1.5px] border-black px-2 py-1.5 flex flex-col justify-between min-h-[46px]">
+                <span className="font-bold uppercase text-[10px] whitespace-nowrap">REQUISITIONER HOD SIGN :</span>
+                <div className="flex items-center gap-1 mt-1">
+                  <input
+                    type="text"
+                    value={formData.hodSign}
+                    onChange={(e) => setFormData({ ...formData, hodSign: e.target.value })}
+                    placeholder="HOD Signature"
+                    className="w-full font-bold outline-none px-1 py-0.5 bg-transparent text-xs border-b border-gray-400 focus:border-black"
+                  />
+                </div>
               </div>
-              <div className="col-span-12 sm:col-span-3 px-2 py-1.5 flex items-center">
+              <div className="col-span-12 sm:col-span-3 px-2 py-2 flex items-center">
                 <span className="font-bold uppercase text-[10px] whitespace-nowrap mr-1">DATE :</span>
                 <input
                   type="date"
@@ -381,70 +386,54 @@ const ProcessChangeRequisitionForm = () => {
               </div>
             </div>
 
-            {/* ROW 5: CLASSIFICATION [ ] MAN [ ] MACHINE [ ] MATERIAL [ ] METHOD */}
+            {/* ROW 5: CLASSIFICATION [✓] MAN [✓] MACHINE [✓] MATERIAL [✓] METHOD */}
             <div className="grid grid-cols-12 border-b-[1.5px] border-black bg-white items-center">
               <div className="col-span-12 sm:col-span-3 border-b sm:border-b-0 sm:border-r-[1.5px] border-black px-2 py-2 font-black uppercase text-[10px] tracking-wider text-black">
                 CLASSIFICATION
               </div>
-              <div className="col-span-3 sm:col-span-2 border-r-[1.5px] border-black px-2 py-2 flex items-center justify-center gap-2 cursor-pointer hover:bg-yellow-50">
-                <input
-                  type="checkbox"
+              <div className="col-span-3 sm:col-span-2 border-r-[1.5px] border-black px-2 py-2 flex items-center justify-center">
+                <GreenTickBox
                   id="class_man"
+                  label="MAN"
                   checked={formData.classification.man}
                   onChange={(e) => setFormData({
                     ...formData,
                     classification: { ...formData.classification, man: e.target.checked }
                   })}
-                  className="w-4 h-4 rounded-none border-[1.5px] border-black accent-black cursor-pointer"
                 />
-                <label htmlFor="class_man" className="font-bold text-[10px] uppercase cursor-pointer select-none">
-                  MAN
-                </label>
               </div>
-              <div className="col-span-3 sm:col-span-2 border-r-[1.5px] border-black px-2 py-2 flex items-center justify-center gap-2 cursor-pointer hover:bg-yellow-50">
-                <input
-                  type="checkbox"
+              <div className="col-span-3 sm:col-span-2 border-r-[1.5px] border-black px-2 py-2 flex items-center justify-center">
+                <GreenTickBox
                   id="class_machine"
+                  label="MACHINE"
                   checked={formData.classification.machine}
                   onChange={(e) => setFormData({
                     ...formData,
                     classification: { ...formData.classification, machine: e.target.checked }
                   })}
-                  className="w-4 h-4 rounded-none border-[1.5px] border-black accent-black cursor-pointer"
                 />
-                <label htmlFor="class_machine" className="font-bold text-[10px] uppercase cursor-pointer select-none">
-                  MACHINE
-                </label>
               </div>
-              <div className="col-span-3 sm:col-span-2 border-r-[1.5px] border-black px-2 py-2 flex items-center justify-center gap-2 cursor-pointer hover:bg-yellow-50">
-                <input
-                  type="checkbox"
+              <div className="col-span-3 sm:col-span-2 border-r-[1.5px] border-black px-2 py-2 flex items-center justify-center">
+                <GreenTickBox
                   id="class_mat"
+                  label="MATERIAL"
                   checked={formData.classification.material}
                   onChange={(e) => setFormData({
                     ...formData,
                     classification: { ...formData.classification, material: e.target.checked }
                   })}
-                  className="w-4 h-4 rounded-none border-[1.5px] border-black accent-black cursor-pointer"
                 />
-                <label htmlFor="class_mat" className="font-bold text-[10px] uppercase cursor-pointer select-none">
-                  MATERIAL
-                </label>
               </div>
-              <div className="col-span-3 sm:col-span-3 px-2 py-2 flex items-center justify-center gap-2 cursor-pointer hover:bg-yellow-50">
-                <input
-                  type="checkbox"
+              <div className="col-span-3 sm:col-span-3 px-2 py-2 flex items-center justify-center">
+                <GreenTickBox
                   id="class_meth"
+                  label="METHOD"
                   checked={formData.classification.method}
                   onChange={(e) => setFormData({
                     ...formData,
                     classification: { ...formData.classification, method: e.target.checked }
                   })}
-                  className="w-4 h-4 rounded-none border-[1.5px] border-black accent-black cursor-pointer"
                 />
-                <label htmlFor="class_meth" className="font-bold text-[10px] uppercase cursor-pointer select-none">
-                  METHOD
-                </label>
               </div>
             </div>
 
@@ -512,39 +501,30 @@ const ProcessChangeRequisitionForm = () => {
                   {formData.particularsRows.map((row, idx) => (
                     <div key={row.id} className="flex items-center justify-between gap-3 pt-1 pb-2 border-b border-gray-200 last:border-b-0 min-h-[38px]">
                       <span className="text-xs font-bold text-gray-500">#{idx + 1}</span>
-                      <div className="flex items-center gap-5">
+                      <div className="flex items-center gap-4">
                         {/* Only show F and M options if F&M is not checked */}
                         {!row.fem && (
                           <>
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                              <span className="text-sm font-black font-mono text-gray-900 group-hover:text-[#FF9800]">F</span>
-                              <input
-                                type="checkbox"
-                                checked={row.f}
-                                onChange={() => handleCheckboxChange(idx, "f")}
-                                className="w-5 h-5 border-[1.5px] border-black rounded accent-black cursor-pointer"
-                              />
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                              <span className="text-sm font-black font-mono text-gray-900 group-hover:text-[#FF9800]">M</span>
-                              <input
-                                type="checkbox"
-                                checked={row.m}
-                                onChange={() => handleCheckboxChange(idx, "m")}
-                                className="w-5 h-5 border-[1.5px] border-black rounded accent-black cursor-pointer"
-                              />
-                            </label>
+                            <GreenTickBox
+                              id={`f_${idx}`}
+                              label="F"
+                              checked={row.f}
+                              onChange={() => handleCheckboxChange(idx, "f")}
+                            />
+                            <GreenTickBox
+                              id={`m_${idx}`}
+                              label="M"
+                              checked={row.m}
+                              onChange={() => handleCheckboxChange(idx, "m")}
+                            />
                           </>
                         )}
-                        <label className="flex items-center gap-2 cursor-pointer group">
-                          <span className="text-sm font-black font-mono text-gray-900 group-hover:text-[#FF9800]">F&M</span>
-                          <input
-                            type="checkbox"
-                            checked={row.fem}
-                            onChange={() => handleCheckboxChange(idx, "fem")}
-                            className="w-5 h-5 border-[1.5px] border-black rounded accent-black cursor-pointer"
-                          />
-                        </label>
+                        <GreenTickBox
+                          id={`fem_${idx}`}
+                          label="F&M"
+                          checked={row.fem}
+                          onChange={() => handleCheckboxChange(idx, "fem")}
+                        />
                       </div>
                     </div>
                   ))}
@@ -572,101 +552,83 @@ const ProcessChangeRequisitionForm = () => {
               <div className="flex flex-wrap items-center justify-between gap-4 mb-2 pb-2 border-b border-gray-200 text-xs font-black">
                 {/* Product Section */}
                 <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 border border-gray-300 rounded">
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.reason.product}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        reason: { ...formData.reason, product: e.target.checked }
-                      })}
-                      className="w-4 h-4 accent-black"
-                    />
-                    <span className="uppercase">Product</span>
-                  </label>
+                  <GreenTickBox
+                    id="reason_prod"
+                    label="Product"
+                    checked={formData.reason.product}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      reason: { ...formData.reason, product: e.target.checked }
+                    })}
+                  />
                   <span className="text-gray-400">|</span>
-                  <label className="flex items-center gap-1 text-[11px] font-bold cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.reason.productF}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        reason: { ...formData.reason, productF: e.target.checked }
-                      })}
-                      className="w-3.5 h-3.5 accent-black"
-                    />
-                    <span>F</span>
-                  </label>
-                  <label className="flex items-center gap-1 text-[11px] font-bold cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.reason.productM}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        reason: { ...formData.reason, productM: e.target.checked }
-                      })}
-                      className="w-3.5 h-3.5 accent-black"
-                    />
-                    <span>M</span>
-                  </label>
+                  <GreenTickBox
+                    id="reason_prod_f"
+                    label="F"
+                    size="sm"
+                    checked={formData.reason.productF}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      reason: { ...formData.reason, productF: e.target.checked }
+                    })}
+                  />
+                  <GreenTickBox
+                    id="reason_prod_m"
+                    label="M"
+                    size="sm"
+                    checked={formData.reason.productM}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      reason: { ...formData.reason, productM: e.target.checked }
+                    })}
+                  />
                 </div>
 
                 {/* Process Section */}
                 <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 border border-gray-300 rounded">
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.reason.process}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        reason: { ...formData.reason, process: e.target.checked }
-                      })}
-                      className="w-4 h-4 accent-black"
-                    />
-                    <span className="uppercase">Process</span>
-                  </label>
+                  <GreenTickBox
+                    id="reason_proc"
+                    label="Process"
+                    checked={formData.reason.process}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      reason: { ...formData.reason, process: e.target.checked }
+                    })}
+                  />
                   <span className="text-gray-400">|</span>
-                  <label className="flex items-center gap-1 text-[11px] font-bold cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.reason.processF}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        reason: { ...formData.reason, processF: e.target.checked }
-                      })}
-                      className="w-3.5 h-3.5 accent-black"
-                    />
-                    <span>F</span>
-                  </label>
-                  <label className="flex items-center gap-1 text-[11px] font-bold cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.reason.processM}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        reason: { ...formData.reason, processM: e.target.checked }
-                      })}
-                      className="w-3.5 h-3.5 accent-black"
-                    />
-                    <span>M</span>
-                  </label>
+                  <GreenTickBox
+                    id="reason_proc_f"
+                    label="F"
+                    size="sm"
+                    checked={formData.reason.processF}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      reason: { ...formData.reason, processF: e.target.checked }
+                    })}
+                  />
+                  <GreenTickBox
+                    id="reason_proc_m"
+                    label="M"
+                    size="sm"
+                    checked={formData.reason.processM}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      reason: { ...formData.reason, processM: e.target.checked }
+                    })}
+                  />
                 </div>
 
                 {/* Other Any One */}
                 <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 border border-gray-300 rounded">
-                  <input
-                    type="checkbox"
+                  <GreenTickBox
                     id="reason_other"
+                    label="Other any one"
                     checked={formData.reason.other}
                     onChange={(e) => setFormData({
                       ...formData,
                       reason: { ...formData.reason, other: e.target.checked }
                     })}
-                    className="w-4 h-4 accent-black"
                   />
-                  <label htmlFor="reason_other" className="uppercase font-black text-xs cursor-pointer">
-                    Other any one
-                  </label>
                 </div>
               </div>
 
@@ -693,30 +655,26 @@ const ProcessChangeRequisitionForm = () => {
                 <div className="p-3 flex-1 flex flex-col justify-between space-y-3 bg-white">
                   <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-200">
                     <div className="flex items-center gap-3 text-xs font-bold">
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.foundry.isProcess}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            foundry: { ...formData.foundry, isProcess: e.target.checked }
-                          })}
-                          className="w-3.5 h-3.5 accent-black"
-                        />
-                        <span>Process</span>
-                      </label>
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.foundry.isProduct}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            foundry: { ...formData.foundry, isProduct: e.target.checked }
-                          })}
-                          className="w-3.5 h-3.5 accent-black"
-                        />
-                        <span>Product</span>
-                      </label>
+                      <GreenTickBox
+                        id="foundry_proc"
+                        label="Process"
+                        size="sm"
+                        checked={formData.foundry.isProcess}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          foundry: { ...formData.foundry, isProcess: e.target.checked }
+                        })}
+                      />
+                      <GreenTickBox
+                        id="foundry_prod"
+                        label="Product"
+                        size="sm"
+                        checked={formData.foundry.isProduct}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          foundry: { ...formData.foundry, isProduct: e.target.checked }
+                        })}
+                      />
                     </div>
 
                     <div className="flex items-center gap-2 text-xs font-black">
@@ -762,23 +720,23 @@ const ProcessChangeRequisitionForm = () => {
                     className="w-full p-2 border border-gray-300 text-xs font-medium outline-none rounded focus:border-black resize-none"
                   />
 
-                  {/* Foundry Signature Row */}
-                  <div className="grid grid-cols-12 gap-2 pt-2 border-t border-gray-300">
-                    <div className="col-span-7 flex items-center">
-                      <span className="font-bold uppercase text-[9px] whitespace-nowrap mr-1">CFT Leader Signature :</span>
+                  {/* Foundry Signature Row with dedicated physical signing space */}
+                  <div className="grid grid-cols-12 gap-2 pt-2 border-t border-gray-300 min-h-[48px] items-center">
+                    <div className="col-span-7 flex flex-col justify-end">
+                      <span className="font-bold uppercase text-[9px] whitespace-nowrap mb-1">CFT Leader Signature :</span>
                       <input
                         type="text"
-                        
+                        placeholder="Sign: ___________________"
                         value={formData.foundry.leaderSign}
                         onChange={(e) => setFormData({
                           ...formData,
                           foundry: { ...formData.foundry, leaderSign: e.target.value }
                         })}
-                        className="w-full min-h-[24px] text-xs font-bold border-0 outline-none px-1 bg-transparent"
+                        className="w-full text-xs font-bold border-b border-gray-400 focus:border-black outline-none px-1 bg-transparent pb-0.5"
                       />
                     </div>
-                    <div className="col-span-5 flex items-center">
-                      <span className="font-bold uppercase text-[9px] whitespace-nowrap mr-1">Date :</span>
+                    <div className="col-span-5 flex flex-col justify-end">
+                      <span className="font-bold uppercase text-[9px] whitespace-nowrap mb-1">Date :</span>
                       <input
                         type="date"
                         value={formData.foundry.date}
@@ -786,7 +744,7 @@ const ProcessChangeRequisitionForm = () => {
                           ...formData,
                           foundry: { ...formData.foundry, date: e.target.value }
                         })}
-                        className="w-full min-h-[24px] text-[10px] font-bold border-0 outline-none bg-transparent"
+                        className="w-full text-xs outline-none bg-transparent"
                       />
                     </div>
                   </div>
@@ -802,30 +760,26 @@ const ProcessChangeRequisitionForm = () => {
                 <div className="p-3 flex-1 flex flex-col justify-between space-y-3 bg-white">
                   <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-200">
                     <div className="flex items-center gap-3 text-xs font-bold">
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.machineShop.isProcessOnly}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            machineShop: { ...formData.machineShop, isProcessOnly: e.target.checked }
-                          })}
-                          className="w-3.5 h-3.5 accent-black"
-                        />
-                        <span>Process only</span>
-                      </label>
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.machineShop.isProduct}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            machineShop: { ...formData.machineShop, isProduct: e.target.checked }
-                          })}
-                          className="w-3.5 h-3.5 accent-black"
-                        />
-                        <span>Product</span>
-                      </label>
+                      <GreenTickBox
+                        id="ms_proc"
+                        label="Process only"
+                        size="sm"
+                        checked={formData.machineShop.isProcessOnly}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          machineShop: { ...formData.machineShop, isProcessOnly: e.target.checked }
+                        })}
+                      />
+                      <GreenTickBox
+                        id="ms_prod"
+                        label="Product"
+                        size="sm"
+                        checked={formData.machineShop.isProduct}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          machineShop: { ...formData.machineShop, isProduct: e.target.checked }
+                        })}
+                      />
                     </div>
 
                     <div className="flex items-center gap-2 text-xs font-black">
@@ -871,23 +825,23 @@ const ProcessChangeRequisitionForm = () => {
                     className="w-full p-2 border border-gray-300 text-xs font-medium outline-none rounded focus:border-black resize-none"
                   />
 
-                  {/* Machine Shop Signature Row */}
-                  <div className="grid grid-cols-12 gap-2 pt-2 border-t border-gray-300">
-                    <div className="col-span-7 flex items-center">
-                      <span className="font-bold uppercase text-[9px] whitespace-nowrap mr-1">CFT Leader Signature :</span>
+                  {/* Machine Shop Signature Row with dedicated physical signing space */}
+                  <div className="grid grid-cols-12 gap-2 pt-2 border-t border-gray-300 min-h-[48px] items-center">
+                    <div className="col-span-7 flex flex-col justify-end">
+                      <span className="font-bold uppercase text-[9px] whitespace-nowrap mb-1">CFT Leader Signature :</span>
                       <input
                         type="text"
-                        
+                        placeholder="Sign: ___________________"
                         value={formData.machineShop.leaderSign}
                         onChange={(e) => setFormData({
                           ...formData,
                           machineShop: { ...formData.machineShop, leaderSign: e.target.value }
                         })}
-                        className="w-full min-h-[24px] text-xs font-bold border-0 outline-none px-1 bg-transparent"
+                        className="w-full text-xs font-bold border-b border-gray-400 focus:border-black outline-none px-1 bg-transparent pb-0.5"
                       />
                     </div>
-                    <div className="col-span-5 flex items-center">
-                      <span className="font-bold uppercase text-[9px] whitespace-nowrap mr-1">Date :</span>
+                    <div className="col-span-5 flex flex-col justify-end">
+                      <span className="font-bold uppercase text-[9px] whitespace-nowrap mb-1">Date :</span>
                       <input
                         type="date"
                         value={formData.machineShop.date}
@@ -895,7 +849,7 @@ const ProcessChangeRequisitionForm = () => {
                           ...formData,
                           machineShop: { ...formData.machineShop, date: e.target.value }
                         })}
-                        className="w-full min-h-[24px] text-[10px] font-bold border-0 outline-none bg-transparent"
+                        className="w-full text-xs outline-none bg-transparent"
                       />
                     </div>
                   </div>
@@ -913,46 +867,37 @@ const ProcessChangeRequisitionForm = () => {
               {/* Left Sub-Grid: Approved / Rejected / If others */}
               <div className="col-span-12 sm:col-span-6 p-2 flex flex-col justify-between space-y-2">
                 <div className="flex items-center gap-6 pt-1">
-                  <label className="flex items-center gap-2 cursor-pointer font-black text-xs uppercase text-green-800">
-                    <input
-                      type="checkbox"
-                      checked={formData.approval.approved}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        approval: { ...formData.approval, approved: e.target.checked, rejected: false }
-                      })}
-                      className="w-4 h-4 border border-black accent-green-600"
-                    />
-                    <span>Approved</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer font-black text-xs uppercase text-red-800">
-                    <input
-                      type="checkbox"
-                      checked={formData.approval.rejected}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        approval: { ...formData.approval, rejected: e.target.checked, approved: false }
-                      })}
-                      className="w-4 h-4 border border-black accent-red-600"
-                    />
-                    <span>Rejected</span>
-                  </label>
+                  <GreenTickBox
+                    id="app_approved"
+                    label="Approved"
+                    checked={formData.approval.approved}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      approval: { ...formData.approval, approved: e.target.checked, rejected: false }
+                    })}
+                  />
+                  <GreenTickBox
+                    id="app_rejected"
+                    label="Rejected"
+                    checked={formData.approval.rejected}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      approval: { ...formData.approval, rejected: e.target.checked, approved: false }
+                    })}
+                  />
                 </div>
 
                 <div className="flex items-center gap-2 pt-1 border-t border-gray-200">
-                  <label className="flex items-center gap-1.5 font-bold text-[10px] uppercase text-gray-700 whitespace-nowrap cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.approval.ifOthers}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        approval: { ...formData.approval, ifOthers: e.target.checked }
-                      })}
-                      className="w-3.5 h-3.5 accent-black"
-                    />
-                    <span>If others, specify :</span>
-                  </label>
+                  <GreenTickBox
+                    id="app_if_others"
+                    label="If others, specify :"
+                    size="sm"
+                    checked={formData.approval.ifOthers}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      approval: { ...formData.approval, ifOthers: e.target.checked }
+                    })}
+                  />
                   <input
                     type="text"
                     placeholder="Specify other approval condition..."
@@ -966,7 +911,7 @@ const ProcessChangeRequisitionForm = () => {
                 </div>
               </div>
 
-              {/* Right Sub-Grid: Approving Authority: PLANT HEAD | Signature */}
+              {/* Right Sub-Grid: Approving Authority: PLANT HEAD | Signature with spacious physical signing box */}
               <div className="col-span-12 sm:col-span-6 divide-y divide-black">
                 <div className="grid grid-cols-12 divide-x divide-black p-0">
                   <div className="col-span-5 px-3 py-2 font-bold uppercase text-[10px] text-gray-800 flex items-center bg-gray-50">
@@ -976,21 +921,24 @@ const ProcessChangeRequisitionForm = () => {
                     PLANT HEAD
                   </div>
                 </div>
-                <div className="grid grid-cols-12 divide-x divide-black p-0">
-                  <div className="col-span-5 px-3 py-2 font-bold uppercase text-[10px] text-gray-800 flex items-center bg-gray-50">
+                <div className="grid grid-cols-12 divide-x divide-black p-0 min-h-[68px]">
+                  <div className="col-span-5 px-3 py-3 font-bold uppercase text-[10px] text-gray-800 flex items-center bg-gray-50">
                     Signature
                   </div>
-                  <div className="col-span-7 px-2 py-1.5 flex items-center">
+                  <div className="col-span-7 px-3 py-2.5 flex flex-col justify-end bg-white">
                     <input
                       type="text"
-                      
+                      placeholder="Sign: __________________________"
                       value={formData.approval.signature}
                       onChange={(e) => setFormData({
                         ...formData,
                         approval: { ...formData.approval, signature: e.target.value }
                       })}
-                      className="w-full text-xs font-bold outline-none px-1 py-0.5 bg-transparent"
+                      className="w-full text-xs font-bold outline-none border-b border-gray-400 focus:border-black bg-transparent pb-0.5"
                     />
+                    <span className="text-[8px] font-mono uppercase text-gray-400 mt-1">
+                      Authorised Plant Head Signature &amp; Date
+                    </span>
                   </div>
                 </div>
               </div>

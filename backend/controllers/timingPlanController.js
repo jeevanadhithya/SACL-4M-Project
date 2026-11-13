@@ -2,6 +2,7 @@ const { sql, poolPromise } = require("../db");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const { getLogoPath, drawCheckbox, drawFormHeader } = require("../utils/pdfTheme");
 
 exports.getRecord = async (req, res) => {
   const { recordKey, projectName } = req.query;
@@ -113,23 +114,25 @@ exports.generateReport = async (req, res) => {
     const pageWidth = doc.page.width - 40;
     let currentY = 20;
 
-    doc.lineWidth(1).rect(startX, currentY, pageWidth, 45).stroke();
-    const logoPath = path.join(__dirname, "logo.jpg");
-    if (fs.existsSync(logoPath)) {
-      try { doc.image(logoPath, startX + 5, currentY + 4, { width: 40, height: 36 }); } catch (e) {}
-    }
+    const headerH = drawFormHeader(doc, {
+      startX,
+      currentY,
+      pageWidth,
+      title: "TIMING PLAN (APQP / CHANGE SCHEDULE)",
+      qfNo: "QF/01/MKT-08 Rev.05",
+      docNo: formData.partNo || "-",
+      revDate: "dt 01.12.2024",
+    });
+    currentY += headerH;
 
-    doc.font("Helvetica-Bold").fontSize(13).text("SAKTHI AUTO COMPONENT LIMITED", startX + 50, currentY + 10, { width: pageWidth - 250, align: "center" });
-    doc.font("Helvetica-Bold").fontSize(11).text("TIMING PLAN (APQP / CHANGE SCHEDULE)", startX + 50, currentY + 26, { width: pageWidth - 250, align: "center" });
-
-    doc.lineWidth(0.5).rect(startX + pageWidth - 190, currentY, 190, 45).stroke();
-    doc.font("Helvetica").fontSize(7.5);
-    doc.text(`Project: ${formData.projectName || "-"}`, startX + pageWidth - 185, currentY + 8);
-    doc.text(`Customer: ${formData.customer || "-"}`, startX + pageWidth - 185, currentY + 18);
-    doc.text(`Part No: ${formData.partNo || "-"}`, startX + pageWidth - 185, currentY + 27);
-    doc.font("Helvetica-Bold").text("QF/01/MKT-08 Rev.05 dt 01.12.2024", startX + pageWidth - 185, currentY + 36);
-
-    currentY += 45;
+    // Meta details row
+    const metaH = 18;
+    doc.lineWidth(0.5).rect(startX, currentY, pageWidth, metaH).stroke();
+    doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#374151");
+    doc.text(`Project: ${formData.projectName || "-"}`, startX + 6, currentY + 5);
+    doc.text(`Customer: ${formData.customer || "-"}`, startX + 280, currentY + 5);
+    doc.text(`Part No: ${formData.partNo || "-"}`, startX + 540, currentY + 5);
+    currentY += metaH;
 
     // Phase 1 Activities
     const actList = [
